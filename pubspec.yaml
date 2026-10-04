@@ -1,0 +1,20 @@
+name: crave_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.13.5
+
+workspace:
+  - packages/*
+
+dev_dependencies:
+  melos: ^6.0.0
+  very_good_analysis: ^6.0.0
+
+melos:
+  scripts:
+    analyze:
+      description: Run static analysis for all workspace packages
+      run: dart analyze
+      exec:
+        concurrency: 4
