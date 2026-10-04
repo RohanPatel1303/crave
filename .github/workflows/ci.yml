@@ -1,0 +1,14 @@
+name: CI
+
+on:
+  #TODO: run on every pull request, and on pushes to main
+
+concurrency:
+  #TODO: cancel an older run when a newer commit is pushed to the same branch. Look up "github actions concurrency" for more information.
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+    
