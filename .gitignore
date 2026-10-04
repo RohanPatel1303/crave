@@ -1,0 +1,26 @@
+
+# FVM Version Cache
+.fvm/
+flutter_sdk/
+
+#Dart and Flutter Build Outputs
+.dart_tool/
+build/
+coverage/
+
+#IDE files
+.idea/
+*.iml
+.vscode/
+.vscode/settings.json
+
+#Native Build Caches
+**/ios/Pods/
+**/android/.gradle/
+**/android/local.properties
+
+#secrets
+*.jks
+*.keystore
+**/android/key.properties
+.env
