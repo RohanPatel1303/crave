@@ -1,0 +1,9 @@
+name: crave_workspace
+
+packages:
+  - packages/*
+
+scripts:
+  analyze:
+    run: dart analyze
+    description: Run static analysis for all workspace packages.
