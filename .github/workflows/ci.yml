@@ -1,14 +1,33 @@
 name: CI
 
 on:
-  #TODO: run on every pull request, and on pushes to main
+  pull_request:
+  push:
+    branches: [main]
 
 concurrency:
-  #TODO: cancel an older run when a newer commit is pushed to the same branch. Look up "github actions concurrency" for more information.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     steps:
-    
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.6"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
+
+      - name: Analyze
+        run: flutter analyze
