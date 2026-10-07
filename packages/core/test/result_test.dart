@@ -4,30 +4,36 @@ import 'package:test/test.dart';
 void main() {
   group('Result.map', () {
     test('passes an Err through with the same failure instance', () {
-      final failure = ServerFailure(statusCode: 500);
-      final result = Result.err(failure).map((value) => value * 10);
+      const failure = ServerFailure(statusCode: 500);
+      const err = Result<int>.err(failure);
+      final result = err.map((value) => value * 10);
 
       expect(result.failureOrNull, same(failure));
     });
 
     test('transforms an Ok value', () {
-      expect(const Result.ok(2).map((value) => value * 10), const Result.ok(20));
+      expect(
+        const Result<int>.ok(2).map((value) => value * 10),
+        const Result<int>.ok(20),
+      );
     });
   });
 
   group('Result.then', () {
     test('runs the next step when the result is Ok', () {
-      final result = const Result.ok(2).then((value) => Result.ok(value * 10));
+      final result = const Result<int>.ok(2)
+          .then((value) => Result<int>.ok(value * 10));
 
-      expect(result, const Result.ok(20));
+      expect(result, const Result<int>.ok(20));
     });
 
     test('does not run the next step when the result is Err', () {
       var ran = false;
-      final failure = ServerFailure(statusCode: 500);
-      final result = Result.err(failure).then((value) {
+      const failure = ServerFailure(statusCode: 500);
+      const err = Result<int>.err(failure);
+      final result = err.then((value) {
         ran = true;
-        return Result.ok(value * 10);
+        return Result<int>.ok(value * 10);
       });
 
       expect(ran, isFalse);
@@ -37,11 +43,12 @@ void main() {
 
   group('Result.fold', () {
     test('calls the ok branch for Ok and the err branch for Err', () {
-      final okResult = const Result.ok(2).fold(
+      final okResult = const Result<int>.ok(2).fold(
         (value) => value * 10,
         (failure) => -1,
       );
-      final errResult = Result.err(ServerFailure(statusCode: 500)).fold(
+      const err = Result<int>.err(ServerFailure(statusCode: 500));
+      final errResult = err.fold(
         (value) => value * 10,
         (failure) => -1,
       );
@@ -53,8 +60,8 @@ void main() {
 
   group('Result.valueOrNull and failureOrNull', () {
     test('returns the right thing for each side', () {
-      const ok = Result.ok(2);
-      final err = Result.err(ServerFailure(statusCode: 500));
+      const ok = Result<int>.ok(2);
+      const err = Result<int>.err(ServerFailure(statusCode: 500));
 
       expect(ok.valueOrNull, 2);
       expect(ok.failureOrNull, isNull);
@@ -65,7 +72,7 @@ void main() {
 
   group('Result equality', () {
     test('two Ok values with equal values are equal', () {
-      expect(const Result.ok(2), const Result.ok(2));
+      expect(const Result<int>.ok(2), const Result<int>.ok(2));
     });
   });
 
@@ -73,11 +80,11 @@ void main() {
     test('returns Ok when the body succeeds', () {
       final result = Result.guard(() => 2);
 
-      expect(result, const Result.ok(2));
+      expect(result, const Result<int>.ok(2));
     });
 
     test('uses onError to map a known exception to a ServerFailure', () {
-      final failure = ServerFailure(statusCode: 500);
+      const failure = ServerFailure(statusCode: 500);
       final result = Result.guard(
         () => throw const FormatException('bad input'),
         onError: (error, stackTrace) {
@@ -91,12 +98,19 @@ void main() {
       expect(result.failureOrNull, same(failure));
     });
 
-    test('falls back to UnexpectedFailure when onError returns null or is not given', () {
-      final result = Result.guard(() => throw StateError('bad state'));
+    test(
+      'falls back to UnexpectedFailure when onError returns null or '
+      'is not given',
+      () {
+        final result = Result.guard(
+          () => throw StateError('bad state'),
+        );
 
-      expect(result.failureOrNull, isA<UnexpectedFailure>());
-      expect((result.failureOrNull as UnexpectedFailure).cause, isA<StateError>());
-      expect((result.failureOrNull as UnexpectedFailure).stackTrace, isNotNull);
-    });
+        expect(result.failureOrNull, isA<UnexpectedFailure>());
+        final unexpectedFailure = result.failureOrNull!;
+        expect(unexpectedFailure.cause, isA<StateError>());
+        expect(unexpectedFailure.stackTrace, isNotNull);
+      },
+    );
   });
 }
