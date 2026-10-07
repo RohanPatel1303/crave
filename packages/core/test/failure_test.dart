@@ -12,7 +12,7 @@ void main() {
 
   group('UnauthorizedFailure', () {
     test('stores the HTTP status code for unauthorized errors', () {
-      const failure = UnauthorizedFailure(statusCode: 401);
+      const failure = UnauthorizedFailure();
 
       expect(failure.statusCode, 401);
     });
@@ -35,7 +35,7 @@ void main() {
 
   group('ConflictFailure', () {
     test('stores the HTTP status code for conflicts', () {
-      const failure = ConflictFailure(statusCode: 409);
+      const failure = ConflictFailure();
 
       expect(failure.statusCode, 409);
     });

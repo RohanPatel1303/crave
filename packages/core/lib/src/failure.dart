@@ -13,7 +13,7 @@ sealed class AppFailure {
   final StackTrace? stackTrace;
 
   @override
-  String toString() => '$runtimeType($message)';
+  String toString() => 'AppFailure($message)';
 }
 
 /// A failure caused by a network connectivity issue.
@@ -28,9 +28,6 @@ final class NetworkFailure extends AppFailure {
 
 /// A failure caused by a server connectivity issue.
 final class ServerFailure extends AppFailure {
-  /// The HTTP status code returned by the server.
-  final int statusCode;
-
   /// Creates a server failure.
   const ServerFailure({
     required this.statusCode,
@@ -38,13 +35,13 @@ final class ServerFailure extends AppFailure {
     Object? cause,
     StackTrace? stackTrace,
   }) : super(message, cause: cause, stackTrace: stackTrace);
+
+  /// The HTTP status code returned by the server.
+  final int statusCode;
 }
 
 /// A failure caused by an authentication or authorization issue.
 final class UnauthorizedFailure extends AppFailure {
-  /// The HTTP status code associated with the failure.
-  final int statusCode;
-
   /// Creates an unauthorized failure.
   const UnauthorizedFailure({
     this.statusCode = 401,
@@ -52,13 +49,13 @@ final class UnauthorizedFailure extends AppFailure {
     Object? cause,
     StackTrace? stackTrace,
   }) : super(message, cause: cause, stackTrace: stackTrace);
+
+  /// The HTTP status code associated with the failure.
+  final int statusCode;
 }
 
 /// A failure caused by invalid user input.
 final class ValidationFailure extends AppFailure {
-  /// Validation errors keyed by field name.
-  final Map<String, List<String>> fieldErrors;
-
   /// Creates a validation failure.
   const ValidationFailure({
     this.fieldErrors = const {},
@@ -66,13 +63,13 @@ final class ValidationFailure extends AppFailure {
     Object? cause,
     StackTrace? stackTrace,
   }) : super(message, cause: cause, stackTrace: stackTrace);
+
+  /// Validation errors keyed by field name.
+  final Map<String, List<String>> fieldErrors;
 }
 
 /// A failure caused by a server conflict.
 final class ConflictFailure extends AppFailure {
-  /// The HTTP status code associated with the failure.
-  final int statusCode;
-
   /// Creates a conflict failure.
   const ConflictFailure({
     this.statusCode = 409,
@@ -80,6 +77,9 @@ final class ConflictFailure extends AppFailure {
     Object? cause,
     StackTrace? stackTrace,
   }) : super(message, cause: cause, stackTrace: stackTrace);
+
+  /// The HTTP status code associated with the failure.
+  final int statusCode;
 }
 
 /// A failure caused by an unexpected error.
