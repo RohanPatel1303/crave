@@ -43,15 +43,10 @@ void main() {
 
   group('Result.fold', () {
     test('calls the ok branch for Ok and the err branch for Err', () {
-      final okResult = const Result<int>.ok(2).fold(
-        (value) => value * 10,
-        (failure) => -1,
-      );
+      final okResult = const Result<int>.ok(2)
+          .fold((value) => value * 10, (failure) => -1);
       const err = Result<int>.err(ServerFailure(statusCode: 500));
-      final errResult = err.fold(
-        (value) => value * 10,
-        (failure) => -1,
-      );
+      final errResult = err.fold((value) => value * 10, (failure) => -1);
 
       expect(okResult, 20);
       expect(errResult, -1);
@@ -98,19 +93,62 @@ void main() {
       expect(result.failureOrNull, same(failure));
     });
 
-    test(
-      'falls back to UnexpectedFailure when onError returns null or '
-      'is not given',
-      () {
-        final result = Result.guard(
-          () => throw StateError('bad state'),
-        );
+    test('falls back to UnexpectedFailure when onError returns null or '
+        'is not given', () {
+      final result = Result.guard(() => throw StateError('bad state'));
 
-        expect(result.failureOrNull, isA<UnexpectedFailure>());
-        final unexpectedFailure = result.failureOrNull!;
-        expect(unexpectedFailure.cause, isA<StateError>());
-        expect(unexpectedFailure.stackTrace, isNotNull);
-      },
-    );
+      expect(result.failureOrNull, isA<UnexpectedFailure>());
+      final unexpectedFailure = result.failureOrNull!;
+      expect(unexpectedFailure.cause, isA<StateError>());
+      expect(unexpectedFailure.stackTrace, isNotNull);
+    });
+  });
+
+  group('Result.guardAsync', () {
+    test('catches async exceptions and returns a failure result', () async {
+      final result = await Result.guardAsync(
+        () async => throw const FormatException('bad input'),
+      );
+
+      expect(result.failureOrNull, isA<UnexpectedFailure>());
+      expect(result.failureOrNull!.cause, isA<FormatException>());
+    });
+
+    test('uses onError for async failures before falling back', () async {
+      const failure = ServerFailure(statusCode: 500);
+      final result = await Result.guardAsync(
+        () async => throw const FormatException('bad input'),
+        onError: (error, stackTrace) {
+          if (error is FormatException) {
+            return failure;
+          }
+          return null;
+        },
+      );
+
+      expect(result.failureOrNull, same(failure));
+    });
+  });
+
+  group('Result.thenAsync', () {
+    test('awaits the next async step when the result is Ok', () async {
+      final result = await const Result<int>.ok(2)
+          .thenAsync((value) async => Result<int>.ok(value * 10));
+
+      expect(result, const Result<int>.ok(20));
+    });
+
+    test('does not run the next async step when the result is Err', () async {
+      var ran = false;
+      const failure = ServerFailure(statusCode: 500);
+      final result = await const Result<int>.err(failure)
+          .thenAsync((value) async {
+            ran = true;
+            return Result<int>.ok(value * 10);
+          });
+
+      expect(ran, isFalse);
+      expect(result.failureOrNull, same(failure));
+    });
   });
 }

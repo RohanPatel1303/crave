@@ -26,7 +26,9 @@ void main() {
     });
 
     test('stores validation field errors when provided', () {
-      const fieldErrors = {'email': ['is required']};
+      const fieldErrors = {
+        'email': ['is required'],
+      };
       const failure = ValidationFailure(fieldErrors: fieldErrors);
 
       expect(failure.fieldErrors, fieldErrors);
