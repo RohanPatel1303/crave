@@ -72,7 +72,7 @@ void main() {
 
   group('Result equality', () {
     test('two Ok values with equal values are equal', () {
-      expect(const Result<int>.ok(2), const Result<int>.ok(2));
+      expect(Result<int>.ok(2), Result<int>.ok(2));
     });
   });
 
@@ -112,5 +112,53 @@ void main() {
         expect(unexpectedFailure.stackTrace, isNotNull);
       },
     );
+  });
+
+  group('Result.guardAsync', () {
+    test('catches async exceptions and returns a failure result', () async {
+      final result = await Result.guardAsync(
+        () async => throw const FormatException('bad input'),
+      );
+
+      expect(result.failureOrNull, isA<UnexpectedFailure>());
+      expect(result.failureOrNull!.cause, isA<FormatException>());
+    });
+
+    test('uses onError for async failures before falling back', () async {
+      const failure = ServerFailure(statusCode: 500);
+      final result = await Result.guardAsync(
+        () async => throw const FormatException('bad input'),
+        onError: (error, stackTrace) {
+          if (error is FormatException) {
+            return failure;
+          }
+          return null;
+        },
+      );
+
+      expect(result.failureOrNull, same(failure));
+    });
+  });
+
+  group('Result.thenAsync', () {
+    test('awaits the next async step when the result is Ok', () async {
+      final result = await const Result<int>.ok(2).thenAsync(
+        (value) async => Result<int>.ok(value * 10),
+      );
+
+      expect(result, const Result<int>.ok(20));
+    });
+
+    test('does not run the next async step when the result is Err', () async {
+      var ran = false;
+      const failure = ServerFailure(statusCode: 500);
+      final result = await const Result<int>.err(failure).thenAsync((value) async {
+        ran = true;
+        return Result<int>.ok(value * 10);
+      });
+
+      expect(ran, isFalse);
+      expect(result.failureOrNull, same(failure));
+    });
   });
 }

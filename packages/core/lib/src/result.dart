@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:core/src/failure.dart';
 import 'package:meta/meta.dart';
 
@@ -18,6 +20,21 @@ sealed class Result<T> {
   }) {
     try {
       return Result.ok(body());
+    } catch (error, stackTrace) {
+      final failure = onError?.call(error, stackTrace) ??
+          UnexpectedFailure(cause: error, stackTrace: stackTrace);
+      return Result.err(failure);
+    }
+  }
+
+  /// Runs an async operation and converts thrown exceptions into failures.
+  static Future<Result<T>> guardAsync<T>(
+    FutureOr<T> Function() body, {
+    AppFailure? Function(Object error, StackTrace stackTrace)? onError,
+  }) async {
+    try {
+      final value = await body();
+      return Result.ok(value);
     } catch (error, stackTrace) {
       final failure = onError?.call(error, stackTrace) ??
           UnexpectedFailure(cause: error, stackTrace: stackTrace);
@@ -46,6 +63,14 @@ sealed class Result<T> {
   /// Runs the next step only when this result is [Ok].
   Result<R> then<R>(Result<R> Function(T value) next) => switch (this) {
         Ok(value: final value) => next(value),
+        Err(failure: final failure) => Result.err(failure),
+      };
+
+  /// Runs the next async step only when this result is [Ok].
+  Future<Result<R>> thenAsync<R>(
+    FutureOr<Result<R>> Function(T value) next,
+  ) async => switch (this) {
+        Ok(value: final value) => await next(value),
         Err(failure: final failure) => Result.err(failure),
       };
 
