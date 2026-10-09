@@ -24,3 +24,6 @@ coverage/
 *.keystore
 **/android/key.properties
 .env
+
+# macOS
+.DS_Store
