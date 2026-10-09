@@ -18,20 +18,14 @@ sealed class Result<T> {
     T Function() body, {
     AppFailure? Function(Object error, StackTrace stackTrace)? onError,
   }) {
-    late final T value;
     try {
-      value = body();
-    } on Object catch (error, stackTrace) {
+      return Result.ok(body());
+    } catch (error, stackTrace) {
       final failure =
           onError?.call(error, stackTrace) ??
           UnexpectedFailure(cause: error, stackTrace: stackTrace);
       return Result.err(failure);
     }
-    assert(
-      value is! Future<Object?>,
-      'Use Result.guardAsync for asynchronous operations.',
-    );
-    return Result.ok(value);
   }
 
   /// Runs an async operation and converts thrown exceptions into failures.
@@ -42,7 +36,7 @@ sealed class Result<T> {
     try {
       final value = await body();
       return Result.ok(value);
-    } on Object catch (error, stackTrace) {
+    } catch (error, stackTrace) {
       final failure =
           onError?.call(error, stackTrace) ??
           UnexpectedFailure(cause: error, stackTrace: stackTrace);
