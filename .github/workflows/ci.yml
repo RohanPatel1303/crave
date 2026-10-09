@@ -18,10 +18,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Read Flutter version from .fvmrc
+        id: fvm
+        run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.47.6"
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          cache: true
 
       - name: Install dependencies
         run: flutter pub get
@@ -31,3 +36,8 @@ jobs:
 
       - name: Analyze
         run: flutter analyze
+      
+      - name: Test
+        run: dart run melos run test
+
+        
