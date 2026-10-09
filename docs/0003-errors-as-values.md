@@ -44,14 +44,11 @@ We choose option 3: expected failures are represented as values using a small
 sealed `Result<T>` plus a set of concrete `AppFailure` classes. Exceptions remain
 reserved for truly exceptional runtime conditions.
 
-`guard` catches thrown `Object` values from the synchronous body and converts
-them into `Result.err(...)`. It asserts that the body's returned value is not a
-`Future`; asynchronous work should use `guardAsync`, which awaits the callback
-and converts thrown `Object` values (including asynchronous errors) into
-`Result.err(...)`. For either helper, if `onError` is provided, known errors are
-mapped to domain-specific failures; otherwise they fall back to
-`UnexpectedFailure` with the original value stored as `cause` and the stack
-trace attached.
+`guard` catches thrown `Error` and `Exception` objects from the synchronous body
+and converts them into `Result.err(...)`. If `onError` is provided, known
+exceptions are mapped to domain-specific failures; otherwise they fall back to
+`UnexpectedFailure` with the original value stored as `cause` and the current
+stack trace attached.
 
 This keeps the error contract explicit without introducing a heavyweight FP
 library into the lowest layer of the codebase.
