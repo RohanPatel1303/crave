@@ -8,7 +8,7 @@ workspace:
   - packages/*
 
 dev_dependencies:
-  melos: ^7.0.0
+  melos: ^6.0.0
   very_good_analysis: ^6.0.0
 
 melos:
@@ -20,9 +20,7 @@ melos:
         concurrency: 4
     test:
       description: Run tests only in packages that contain a test directory.
-      run: dart test
-      exec:
-        concurrency: 4
+      run: melos exec -- dart test
       packageFilters:
         dirExists:
           - test
