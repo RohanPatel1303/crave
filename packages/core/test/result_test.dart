@@ -78,6 +78,10 @@ void main() {
       expect(result, const Result<int>.ok(2));
     });
 
+    test('asserts when given an async body', () {
+      expect(() => Result.guard(() async => 2), throwsA(isA<AssertionError>()));
+    });
+
     test('uses onError to map a known exception to a ServerFailure', () {
       const failure = ServerFailure(statusCode: 500);
       final result = Result.guard(
@@ -101,6 +105,15 @@ void main() {
       final unexpectedFailure = result.failureOrNull!;
       expect(unexpectedFailure.cause, isA<StateError>());
       expect(unexpectedFailure.stackTrace, isNotNull);
+    });
+
+    test('catches an arbitrary Object', () {
+      final thrownObject = Object();
+      // ignore: only_throw_errors
+      final result = Result.guard<int>(() => throw thrownObject);
+
+      expect(result.failureOrNull, isA<UnexpectedFailure>());
+      expect(result.failureOrNull!.cause, same(thrownObject));
     });
   });
 
@@ -127,6 +140,17 @@ void main() {
       );
 
       expect(result.failureOrNull, same(failure));
+    });
+
+    test('catches an arbitrary Object', () async {
+      final thrownObject = Object();
+      final result = await Result.guardAsync<int>(
+        // ignore: only_throw_errors
+        () async => throw thrownObject,
+      );
+
+      expect(result.failureOrNull, isA<UnexpectedFailure>());
+      expect(result.failureOrNull!.cause, same(thrownObject));
     });
   });
 
