@@ -37,7 +37,12 @@ jobs:
       - name: Analyze
         run: flutter analyze
       
+      - name: Install Melos
+        run: |
+          dart pub global activate melos ^7.0.0
+          echo "${PUB_CACHE:-$HOME/.pub-cache}/bin" >> "$GITHUB_PATH"
+
       - name: Test
-        run: dart run melos run test
+        run: melos run test
 
         
