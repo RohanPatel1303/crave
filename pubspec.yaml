@@ -18,11 +18,25 @@ melos:
       run: dart analyze --fatal-infos
       exec:
         concurrency: 4
-    test:
+    test:dart:
       description: Run tests only in packages that contain a test directory.
       run: dart test
       exec:
         concurrency: 4
       packageFilters:
+        flutter: false
         dirExists:
           - test
+    test:flutter:
+      description: Run tests only in packages that contain a test directory.
+      run: flutter test
+      exec:
+        concurrency: 4
+      packageFilters:
+        flutter: true
+        dirExists:
+          - test
+    test:
+      steps:
+        - test:dart
+        - test:flutter
