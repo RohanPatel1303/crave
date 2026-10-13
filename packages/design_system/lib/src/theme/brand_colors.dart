@@ -46,6 +46,20 @@ final class BrandColors extends ThemeExtension<BrandColors> {
   final Color loyalty;
 
   @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BrandColors &&
+          success == other.success &&
+          onSuccess == other.onSuccess &&
+          warning == other.warning &&
+          onWarning == other.onWarning &&
+          loyalty == other.loyalty;
+
+  @override
+  int get hashCode =>
+      Object.hash(success, onSuccess, warning, onWarning, loyalty);
+
+  @override
   BrandColors copyWith({
     Color? success,
     Color? onSuccess,
@@ -87,5 +101,15 @@ final class BrandColors extends ThemeExtension<BrandColors> {
 /// Extension to access [BrandColors] from a widget's build context.
 extension BrandColorsContextExtension on BuildContext {
   /// The [BrandColors] registered in the current theme.
-  BrandColors get brandColors => Theme.of(this).extension<BrandColors>()!;
+  BrandColors get brandColors {
+    final colors = Theme.of(this).extension<BrandColors>();
+    if (colors == null) {
+      throw FlutterError(
+        'No BrandColors found in the current ThemeData. '
+        'Use AppTheme.light or AppTheme.dark, or register BrandColors in '
+        'ThemeData.extensions.',
+      );
+    }
+    return colors;
+  }
 }
