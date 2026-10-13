@@ -83,8 +83,9 @@ final class BrandColors extends ThemeExtension<BrandColors> {
     );
   }
 }
-/// Extension to access BrandColors from ThemeData
-extension BranColorsExtension on ThemeData {
-  /// Accessor for [BrandColors] in the current [ThemeData].
-  BrandColors get brandColors => extension<BrandColors>()!;
+
+/// Extension to access [BrandColors] from a widget's build context.
+extension BrandColorsContextExtension on BuildContext {
+  /// The [BrandColors] registered in the current theme.
+  BrandColors get brandColors => Theme.of(this).extension<BrandColors>()!;
 }
