@@ -1,6 +1,5 @@
 /// Standard spacing values on the design system's 4-point grid.
 abstract final class Spacing {
-  // static const double none = 0.0;
   /// Extra-small spacing.
   static const double xs = 4;
 
@@ -19,7 +18,6 @@ abstract final class Spacing {
 
 /// Standard corner radii on the design system's 4-point grid.
 abstract final class Radii {
-  // static const double none = 0.0;
   /// Small corner radius.
   static const double sm = 8;
 
