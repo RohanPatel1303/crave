@@ -1,5 +1,4 @@
-import 'package:design_system/src/theme/app_theme.dart';
-import 'package:design_system/src/theme/brand_colors.dart';
+﻿import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -61,5 +60,33 @@ void main() {
 
     expect(buttonSize.width, greaterThanOrEqualTo(48));
     expect(buttonSize.height, greaterThanOrEqualTo(48));
+  });
+
+  testWidgets('missing BrandColors reports how to fix the theme', (
+    tester,
+  ) async {
+    late BuildContext context;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (buildContext) {
+            context = buildContext;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+
+    expect(
+      () => context.brandColors,
+      throwsA(
+        isA<FlutterError>().having(
+          (error) => error.message,
+          'message',
+          contains('Use AppTheme.light or AppTheme.dark'),
+        ),
+      ),
+    );
   });
 }
