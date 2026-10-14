@@ -1,6 +1,6 @@
 resolution: workspace
 name: design_system
-description: "This is a design system package for the Flutter application. It contains reusable UI components, styles, and themes that can be shared across different parts of the app to ensure consistency in design and user experience."
+description: "It contains reusable UI components, styles, and themes that can be shared across different parts of the app to ensure consistency in design and user experience."
 version: 0.1.0
 
 environment:
@@ -14,4 +14,4 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-publish_to: none # Remove this line if you wish to publish to pub.dev
+publish_to: none
