@@ -33,3 +33,9 @@ abstract final class A11y {
   /// Minimum interactive target size in logical pixels.
   static const double minTapTargetSize = 48;
 }
+
+/// Standard sizing values on the design system's 4-point grid.
+abstract final class Sizing {
+  /// Spinner size.
+  static const double spinnerSize = 20;
+}
