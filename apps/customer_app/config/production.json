@@ -1,0 +1,4 @@
+{
+    "FLAVOR": "production",
+    "API_BASE_URL": "https://api-dev.production.example.com"
+}
