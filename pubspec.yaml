@@ -32,7 +32,7 @@ melos:
       description: Run tests only in packages that contain a test directory.
       run: flutter test
       exec:
-        concurrency: 4
+        concurrency: 1
       packageFilters:
         flutter: true
         dirExists:
