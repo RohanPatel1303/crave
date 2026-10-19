@@ -22,7 +22,7 @@ class _CraveAppState extends State<CraveApp> {
   Widget build(BuildContext context) {
     final config = getIt<AppConfig>();
     final app = MaterialApp.router(
-      title: 'Crave ${config.flavor.name}',
+      title: config.isProduction ? 'Crave' : 'Crave ${config.flavor.name}',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:core/core.dart';
-import 'package:customer_app/app.dart';
+import 'package:customer_app/app/app.dart';
 import 'package:customer_app/app/app_bloc_observer.dart';
 import 'package:customer_app/app/di.dart';
 import 'package:flutter/material.dart';
@@ -25,18 +25,19 @@ void ensureFlavorsMatch({
 }
 
 Future<void> bootstrap() async {
-  WidgetsFlutterBinding.ensureInitialized();
   final config = AppConfig.fromEnvironment();
-  ensureFlavorsMatch(configFlavor: config.flavor, nativeFlavor: appFlavor);
   final logger = ConsoleLogger(
     minLevel: config.verboseLogging ? LogLevel.debug : LogLevel.info,
   );
-  final logInfo = logger.info;
-  final logError = logger.error;
-  logInfo('Starting Crave ${config.flavor.name}');
+  // Config and flavor errors are thrown before the error hooks exist, on
+  // purpose: they can only come from a misconfigured build, so they should
+  // crash loudly at launch (visible in logcat) rather than be reported.
+  WidgetsFlutterBinding.ensureInitialized();
+  ensureFlavorsMatch(configFlavor: config.flavor, nativeFlavor: appFlavor);
+  logger.info('Starting Crave ${config.flavor.name}');
   final presentFlutterError = FlutterError.presentError;
   FlutterError.onError = (details) {
-    logError(
+    logger.error(
       'Flutter error',
       error: details.exception,
       stackTrace: details.stack,
@@ -44,7 +45,7 @@ Future<void> bootstrap() async {
     presentFlutterError(details);
   };
   PlatformDispatcher.instance.onError = (error, stack) {
-    logError('Uncaught error', error: error, stackTrace: stack);
+    logger.error('Uncaught error', error: error, stackTrace: stack);
     return true;
   };
   Bloc.observer = AppBlocObserver(logger);
