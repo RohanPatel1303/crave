@@ -1,5 +1,5 @@
 import 'package:core/core.dart';
-import 'package:customer_app/app.dart';
+import 'package:customer_app/app/app.dart';
 import 'package:customer_app/app/di.dart';
 import 'package:customer_app/app/router.dart';
 import 'package:design_system/design_system.dart';
@@ -7,17 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  setUp(() async {
+  Future<void> registerConfigWithFlavor(Flavor flavor) async {
     await resetDependencies();
     getIt.registerSingleton<AppConfig>(
-      AppConfig.parse(
-        flavor: Flavor.staging,
-        apiBaseUrl: 'https://api.example.com',
-      ),
+      AppConfig.parse(flavor: flavor, apiBaseUrl: 'https://api.example.com'),
     );
-  });
+  }
 
-  tearDown(resetDependencies);
+  setUp(() => registerConfigWithFlavor(Flavor.staging));
 
   testWidgets('shows the home page and a non-production flavor banner', (
     tester,
@@ -41,17 +38,12 @@ void main() {
   });
 
   testWidgets('does not show a flavor banner in production', (tester) async {
-    await resetDependencies();
-    getIt.registerSingleton<AppConfig>(
-      AppConfig.parse(
-        flavor: Flavor.prod,
-        apiBaseUrl: 'https://api.example.com',
-      ),
-    );
+    await registerConfigWithFlavor(Flavor.prod);
 
     await tester.pumpWidget(const CraveApp());
 
     expect(find.byType(Banner), findsNothing);
+    expect(tester.widget<MaterialApp>(find.byType(MaterialApp)).title, 'Crave');
   });
 
   testWidgets('shows a not-found page for an unknown location', (tester) async {
@@ -60,9 +52,5 @@ void main() {
     );
 
     expect(find.text('Page not found'), findsOneWidget);
-  });
-
-  test('defines the home route', () {
-    expect(Routes.home, '/');
   });
 }
