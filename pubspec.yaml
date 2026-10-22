@@ -44,6 +44,9 @@ melos:
       steps:
         - test:dart
         - test:flutter
+    coverage:gate:
+      description: Enforce the workspace line coverage threshold
+      run: dart run repo_tools:coverage_gate
     deps:check:
       description: Check workspace dependency layers
       run: dart run repo_tools:check_deps
