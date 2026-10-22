@@ -33,6 +33,8 @@ The `tool` package is exempt because it contains repository and development
 utilities, not code used by the apps. It needs to inspect workspace packages
 to enforce repository rules, so treating it as a product package in the
 dependency hierarchy would not describe its role.
+The coverage gate likewise scans only `packages/` and `apps/`; it does not
+count `tool/` coverage.
 
 In particular, feature packages cannot import each other. Cross-feature
 navigation is coordinated through routes owned by the app, rather than one
