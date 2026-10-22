@@ -10,8 +10,10 @@ workspace:
   - tool
 
 dev_dependencies:
+  coverage: ^1.0.0
   melos: ^7.0.0
   very_good_analysis: ^6.0.0
+
 
 melos:
   scripts:
@@ -22,7 +24,7 @@ melos:
         concurrency: 4
     test:dart:
       description: Run tests only in packages that contain a test directory.
-      run: dart test
+      run: dart run coverage:test_with_coverage
       exec:
         concurrency: 4
       packageFilters:
@@ -31,7 +33,7 @@ melos:
           - test
     test:flutter:
       description: Run tests only in packages that contain a test directory.
-      run: flutter test
+      run: flutter test --coverage
       exec:
         concurrency: 1
       packageFilters:
