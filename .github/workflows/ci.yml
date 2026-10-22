@@ -45,4 +45,7 @@ jobs:
       - name: Test
         run: melos run test
 
+      - name: Coverage gate
+        run: melos run coverage:gate
+
         
