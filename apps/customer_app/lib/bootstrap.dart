@@ -24,17 +24,7 @@ void ensureFlavorsMatch({
   }
 }
 
-Future<void> bootstrap() async {
-  final config = AppConfig.fromEnvironment();
-  final logger = ConsoleLogger(
-    minLevel: config.verboseLogging ? LogLevel.debug : LogLevel.info,
-  );
-  // Config and flavor errors are thrown before the error hooks exist, on
-  // purpose: they can only come from a misconfigured build, so they should
-  // crash loudly at launch (visible in logcat) rather than be reported.
-  WidgetsFlutterBinding.ensureInitialized();
-  ensureFlavorsMatch(configFlavor: config.flavor, nativeFlavor: appFlavor);
-  logger.info('Starting Crave ${config.flavor.name}');
+void installErrorHandlers(AppLogger logger) {
   final presentFlutterError = FlutterError.presentError;
   FlutterError.onError = (details) {
     logger.error(
@@ -48,6 +38,20 @@ Future<void> bootstrap() async {
     logger.error('Uncaught error', error: error, stackTrace: stack);
     return true;
   };
+}
+
+Future<void> bootstrap() async {
+  final config = AppConfig.fromEnvironment();
+  final logger = ConsoleLogger(
+    minLevel: config.verboseLogging ? LogLevel.debug : LogLevel.info,
+  );
+  // Config and flavor errors are thrown before the error hooks exist, on
+  // purpose: they can only come from a misconfigured build, so they should
+  // crash loudly at launch (visible in logcat) rather than be reported.
+  WidgetsFlutterBinding.ensureInitialized();
+  ensureFlavorsMatch(configFlavor: config.flavor, nativeFlavor: appFlavor);
+  logger.info('Starting Crave ${config.flavor.name}');
+  installErrorHandlers(logger);
   Bloc.observer = AppBlocObserver(logger);
   await configureDependencies(config: config, logger: logger);
   runApp(const CraveApp());
