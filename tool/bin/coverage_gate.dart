@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:repo_tools/coverage.dart';
+const double _defaultThreshold = 80;
 
 Future<void> main(List<String> args) async {
   final threshold = _parseThreshold(args);
@@ -12,10 +12,9 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  final lcovByPackage = <String, String?>{};
-  final packagesWithTests = <String>{};
+  final totalsByPackage = <String, _CoverageTotals>{};
+  var lcovFileCount = 0;
 
-  // Tooling is intentionally excluded; only product packages are gated.
   for (final root in ['packages', 'apps']) {
     final directory = Directory(root);
     if (!directory.existsSync()) continue;
@@ -24,17 +23,9 @@ Future<void> main(List<String> args) async {
       recursive: true,
       followLinks: false,
     )) {
-      final parts = entity.path.replaceAll(r'\', '/').split('/');
-      if (entity is Directory && parts.last == 'test') {
-        final package = parts.take(parts.length - 1).join('/');
-        if (File('$package/pubspec.yaml').existsSync()) {
-          packagesWithTests.add(package);
-          lcovByPackage.putIfAbsent(package, () => null);
-        }
-        continue;
-      }
-
       if (entity is! File) continue;
+
+      final parts = entity.path.replaceAll(r'\', '/').split('/');
       final coverageIndex = parts.indexOf('coverage');
       if (coverageIndex < 2 ||
           coverageIndex != parts.length - 2 ||
@@ -44,39 +35,51 @@ Future<void> main(List<String> args) async {
       }
 
       final package = parts.take(coverageIndex).join('/');
-      if (!File('$package/pubspec.yaml').existsSync()) continue;
-      final contents = await entity.readAsString();
-      final previous = lcovByPackage[package];
-      lcovByPackage[package] = previous == null
-          ? contents
-          : '$previous\n$contents';
+      final totals = totalsByPackage.putIfAbsent(package, _CoverageTotals.new);
+      totals.files++;
+      lcovFileCount++;
+
+      for (final line in await entity.readAsLines()) {
+        if (line.startsWith('LF:')) {
+          totals.linesFound += int.tryParse(line.substring(3)) ?? 0;
+        } else if (line.startsWith('LH:')) {
+          totals.linesHit += int.tryParse(line.substring(3)) ?? 0;
+        }
+      }
     }
   }
 
-  final report = evaluateCoverage(
-    lcovByPackage,
-    packagesWithTests: packagesWithTests,
-    threshold: threshold,
-  );
+  if (lcovFileCount == 0) {
+    stderr.writeln(
+      'Coverage gate failed: no coverage/lcov.info files found under packages/ or apps/.',
+    );
+    exitCode = 1;
+    return;
+  }
 
+  var totalFound = 0;
+  var totalHit = 0;
   stdout.writeln('Coverage by package:');
-  for (final entry in report.packages.entries) {
-    final totals = entry.value;
+  for (final package in totalsByPackage.keys.toList()..sort()) {
+    final totals = totalsByPackage[package]!;
+    totalFound += totals.linesFound;
+    totalHit += totals.linesHit;
     stdout.writeln(
-      '  ${entry.key}: ${_formatPercent(totals)} '
-      '(${totals.linesHit}/${totals.linesFound} lines)',
+      '  $package: ${_formatPercent(totals.linesHit, totals.linesFound)} '
+      '(${totals.linesHit}/${totals.linesFound} lines; ${totals.files} lcov file(s))',
     );
   }
+
+  final totalPercent = _percent(totalHit, totalFound);
   stdout.writeln(
-    'Total coverage: ${_formatPercent(report.total)} '
-    '(${report.total.linesHit}/${report.total.linesFound} lines; '
-    'threshold ${threshold.toStringAsFixed(1)}%)',
+    'Total coverage: ${_formatPercent(totalHit, totalFound)} '
+    '($totalHit/$totalFound lines; threshold ${threshold.toStringAsFixed(1)}%)',
   );
 
-  for (final failure in report.failures) {
-    stderr.writeln('Coverage gate failed: $failure');
+  if (totalFound == 0 || totalPercent < threshold) {
+    stderr.writeln('Coverage gate failed.');
+    exitCode = 1;
   }
-  if (!report.passes) exitCode = 1;
 }
 
 double? _parseThreshold(List<String> args) {
@@ -91,9 +94,7 @@ double? _parseThreshold(List<String> args) {
     }
   }
 
-  final threshold = value == null
-      ? defaultCoverageThreshold
-      : double.tryParse(value);
+  final threshold = value == null ? _defaultThreshold : double.tryParse(value);
   if (threshold == null ||
       !threshold.isFinite ||
       threshold < 0 ||
@@ -103,5 +104,13 @@ double? _parseThreshold(List<String> args) {
   return threshold;
 }
 
-String _formatPercent(CoverageTotals totals) =>
-    '${totals.percent.toStringAsFixed(1)}%';
+double _percent(int hit, int found) => found == 0 ? 0 : hit * 100 / found;
+
+String _formatPercent(int hit, int found) =>
+    '${_percent(hit, found).toStringAsFixed(1)}%';
+
+class _CoverageTotals {
+  int linesFound = 0;
+  int linesHit = 0;
+  int files = 0;
+}

@@ -19,7 +19,7 @@ melos:
   scripts:
     analyze:
       description: Run static analysis for all workspace packages
-      run: dart analyze --fatal-infos
+      run: dart analyze --fatal-infos && dart run melos run deps:check
       exec:
         concurrency: 4
     test:dart:
