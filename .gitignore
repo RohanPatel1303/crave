@@ -7,6 +7,9 @@ flutter_sdk/
 .dart_tool/
 build/
 coverage/
+node_modules/
+server/dist/
+server/node_modules/
 
 #IDE files
 .idea/
