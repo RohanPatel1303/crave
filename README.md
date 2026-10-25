@@ -35,9 +35,10 @@ dependency layers.
 
 | Number | Title | ADR |
 | --- | --- | --- |
-| 0001 | Record architecture decisions | [Read](docs/0001-record-architecture-decisions.md) |
-| 0002 | Monorepo with pub workspaces and Melos | [Read](docs/0002-monorepo-with-pub-workspaces-and-melos.md) |
-| 0003 | Expected failures are values, not exceptions | [Read](docs/0003-errors-as-values.md) |
+| 0001 | Record architecture decisions | [Read](docs/adr/0001-record-architecture-decisions.md) |
+| 0002 | Monorepo with pub workspaces and Melos | [Read](docs/adr/0002-monorepo-with-pub-workspaces-and-melos.md) |
+| 0003 | Expected failures are values, not exceptions | [Read](docs/adr/0003-errors-as-values.md) |
+| 0004 | BLoC for application state | [Read](docs/adr/0004-bloc-for-state-management.md) |
 | 0005 | Layered package dependencies | [Read](docs/adr/0005-layered-package-dependencies.md) |
 | 0006 | Backend stack | [Read](docs/adr/0006-backend-stack.md) |
 
