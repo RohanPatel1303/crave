@@ -39,6 +39,7 @@ dependency layers.
 | 0002 | Monorepo with pub workspaces and Melos | [Read](docs/0002-monorepo-with-pub-workspaces-and-melos.md) |
 | 0003 | Expected failures are values, not exceptions | [Read](docs/0003-errors-as-values.md) |
 | 0005 | Layered package dependencies | [Read](docs/adr/0005-layered-package-dependencies.md) |
+| 0006 | Backend stack | [Read](docs/adr/0006-backend-stack.md) |
 
 ## Getting started
 
@@ -61,6 +62,20 @@ fvm flutter run --flavor dev --dart-define-from-file=config/dev.json
 The command documents the intended launch configuration. The customer app's
 Flutter manifest, Dart entrypoint, and `config/dev.json` are not yet tracked in
 this repository, so the app cannot currently be launched from this checkout.
+
+## Server
+
+Install dependencies and start the Node.js API in development mode:
+
+```sh
+cd server
+npm ci
+npm run dev
+```
+
+Run the server tests and coverage gate with `npm test` from `server/`. Other
+checks are available with `npm run lint`, `npm run format:check`, and
+`npm run typecheck`.
 
 ## Quality gates
 
