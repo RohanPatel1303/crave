@@ -41,6 +41,7 @@ dependency layers.
 | 0004 | BLoC for application state | [Read](docs/adr/0004-bloc-for-state-management.md) |
 | 0005 | Layered package dependencies | [Read](docs/adr/0005-layered-package-dependencies.md) |
 | 0006 | Backend stack | [Read](docs/adr/0006-backend-stack.md) |
+| 0007 | Hosted sign-in with OIDC | [Read](docs/adr/0007-hosted-sign-in-with-oidc.md) |
 
 ## Getting started
 
