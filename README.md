@@ -67,6 +67,33 @@ this repository, so the app cannot currently be launched from this checkout.
 
 ## Server
 
+### Keycloak
+
+The server needs an OIDC identity provider. Locally that is Keycloak in
+Docker, which imports the `crave` realm from
+[infra/keycloak/crave-realm.json](infra/keycloak/crave-realm.json) on a fresh
+container. Start it from `infra/`:
+
+```sh
+cd infra
+cp .env.example .env   # first time only; set an admin password
+docker compose up -d
+```
+
+Keycloak is ready when
+`http://localhost:8081/realms/crave/.well-known/openid-configuration` returns
+JSON. The admin console is at http://localhost:8081/admin, and you sign in
+with the `KC_BOOTSTRAP_ADMIN_*` values from `infra/.env`. Those values only
+take effect when the container is first created.
+
+> **Dev only.** The realm file contains the realm's private signing keys and a
+> demo user, and the `crave-dev-cli` client allows the password grant. Never
+> import this realm or copy that client into a shared, staging or production
+> Keycloak. See [infra/README.md](infra/README.md) for details and for
+> re-exporting the realm after changes.
+
+### API
+
 Install dependencies and start the Node.js API in development mode:
 
 ```sh
@@ -80,6 +107,51 @@ npm run dev
 `OIDC_ISSUER` and `OIDC_AUDIENCE` are required. The server uses OIDC discovery
 at the issuer URL to find its JWKS endpoint, so the configured identity
 provider must be reachable when the server starts.
+
+### Local sign-in
+
+> These commands use `crave-dev-cli`, a **dev-only** client with the password
+> grant enabled. Never use it or its configuration outside local development;
+> see [infra/README.md](infra/README.md).
+
+With [Keycloak](#keycloak) and the [API](#api) running, find the token endpoint in the discovery document:
+
+```sh
+curl -s http://localhost:8081/realms/crave/.well-known/openid-configuration \
+  | jq -r .token_endpoint
+```
+
+Get an access token for the demo user. `read -s` keeps the password out of
+your shell history:
+
+```sh
+read -s 'DEMO_PASSWORD?Password for demo@crave.dev: '; echo
+TOKEN=$(curl -s -X POST \
+  http://localhost:8081/realms/crave/protocol/openid-connect/token \
+  -d grant_type=password \
+  -d client_id=crave-dev-cli \
+  -d username=demo@crave.dev \
+  --data-urlencode "password=$DEMO_PASSWORD" \
+  -d scope=openid \
+  | jq -r .access_token)
+```
+
+Read the claims locally. Check `iss`, `aud` (must include `crave-api`), `sub`
+and `exp`:
+
+```sh
+echo "$TOKEN" \
+  | jq -R 'split(".")[1] | gsub("-";"+") | gsub("_";"/") | @base64d | fromjson'
+```
+
+Call the API. A fresh token returns `200` with the user's `id` and `email`:
+
+```sh
+curl -i -H "Authorization: Bearer $TOKEN" http://localhost:8080/me
+```
+
+Access tokens last 5 minutes. Calling `/me` again after that returns `401`
+with `"code": "UNAUTHORIZED"`.
 
 Run the server tests and coverage gate with `npm test` from `server/`. Other
 checks are available with `npm run lint`, `npm run format:check`, and

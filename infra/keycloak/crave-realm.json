@@ -415,7 +415,8 @@
     "username" : "demo@crave.dev",
     "firstName" : "Rohan",
     "lastName" : "Patel",
-    "emailVerified" : false,
+    "email" : "demo@crave.dev",
+    "emailVerified" : true,
     "enabled" : true,
     "createdTimestamp" : 1793060112772,
     "totp" : false,
@@ -423,8 +424,8 @@
       "id" : "ed35b7a0-c097-409d-ba76-f2e16ba9f4d8",
       "type" : "password",
       "userLabel" : "My password",
-      "createdDate" : 1793060328903,
-      "secretData" : "{\"value\":\"aD33t1E1H/2763q69FZ2ZVKjlA4iqrxI8frTgQy8L9E=\",\"salt\":\"NjVml+bqji5RhZWeV1Y5+g==\",\"additionalParameters\":{}}",
+      "createdDate" : 1793150381803,
+      "secretData" : "{\"value\":\"THkxVUApju1wLPL3okSMJD+HeZzQA3J+mW+SXiNAfgM=\",\"salt\":\"DmfboxBIMTGKLnrSjI4UOA==\",\"additionalParameters\":{}}",
       "credentialData" : "{\"hashIterations\":5,\"algorithm\":\"argon2\",\"additionalParameters\":{\"hashLength\":[\"32\"],\"memory\":[\"7168\"],\"type\":[\"id\"],\"version\":[\"1.3\"],\"parallelism\":[\"1\"]}}"
     } ],
     "disableableCredentialTypes" : [ ],
@@ -614,7 +615,7 @@
     "authenticationFlowBindingOverrides" : { },
     "fullScopeAllowed" : true,
     "nodeReRegistrationTimeout" : -1,
-    "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "basic", "email", "crave-api-audience" ],
+    "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "crave-api-audience", "basic", "email" ],
     "optionalClientScopes" : [ "address", "phone", "organization", "offline_access", "microprofile-jwt" ]
   }, {
     "id" : "93358127-a606-46d5-aaf3-3d187c417969",
@@ -646,6 +647,7 @@
       "backchannel.logout.session.required" : "true",
       "standard.token.exchange.enabled" : "false",
       "oauth2.jwt.authorization.grant.enabled" : "false",
+      "post.logout.redirect.uris" : "+",
       "oauth2.device.authorization.grant.enabled" : "false",
       "backchannel.logout.revoke.offline.tokens" : "false",
       "dpop.bound.access.tokens" : "false"
@@ -653,7 +655,7 @@
     "authenticationFlowBindingOverrides" : { },
     "fullScopeAllowed" : true,
     "nodeReRegistrationTimeout" : -1,
-    "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "basic", "email", "crave-api-audience" ],
+    "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "crave-api-audience", "basic", "email" ],
     "optionalClientScopes" : [ "address", "phone", "organization", "offline_access", "microprofile-jwt" ]
   }, {
     "id" : "91b7151c-3370-4dbd-bbf2-f201706141b2",
@@ -779,11 +781,12 @@
       "protocolMapper" : "oidc-audience-mapper",
       "consentRequired" : false,
       "config" : {
-        "included.custom.audience" : "crave-api",
         "id.token.claim" : "false",
         "lightweight.claim" : "false",
+        "introspection.token.claim" : "true",
         "access.token.claim" : "true",
-        "introspection.token.claim" : "true"
+        "included.custom.audience" : "crave-api",
+        "userinfo.token.claim" : "false"
       }
     } ]
   }, {
@@ -1425,7 +1428,7 @@
       "subType" : "anonymous",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "saml-user-attribute-mapper", "oidc-usermodel-attribute-mapper", "saml-role-list-mapper", "oidc-usermodel-property-mapper", "oidc-full-name-mapper", "saml-user-property-mapper", "oidc-address-mapper", "oidc-sha256-pairwise-sub-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-address-mapper", "oidc-usermodel-property-mapper", "oidc-full-name-mapper", "saml-user-property-mapper", "saml-user-attribute-mapper", "saml-role-list-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-usermodel-attribute-mapper" ]
       }
     }, {
       "id" : "69d883e5-6ca1-4c73-9df6-e8c1291a017e",
@@ -1464,7 +1467,7 @@
       "subType" : "authenticated",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-sha256-pairwise-sub-mapper", "saml-role-list-mapper", "oidc-usermodel-attribute-mapper", "saml-user-property-mapper", "oidc-full-name-mapper", "oidc-address-mapper", "saml-user-attribute-mapper", "oidc-usermodel-property-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-full-name-mapper", "oidc-address-mapper", "oidc-usermodel-attribute-mapper", "saml-user-attribute-mapper", "saml-user-property-mapper", "oidc-usermodel-property-mapper", "saml-role-list-mapper", "oidc-sha256-pairwise-sub-mapper" ]
       }
     }, {
       "id" : "a320cd29-b161-46a4-b038-1e595f37a087",
