@@ -9,6 +9,8 @@
 - Server errors use the documented JSON envelope in `docs/api.md`.
 - Read server configuration through `loadConfig`; do not read environment variables directly elsewhere.
 - Never include stack traces or internal error details in API responses.
+- Protect server routes with `requireAuth`; only `/health` is public, so mount new routes after it in `createApp`.
+- Never log access tokens or the `Authorization` header, including inside error messages.
 - Every change ships with relevant tests; keep total line coverage at or above 80%.
 - Before finishing, run `dart format --set-exit-if-changed .`.
 - Before finishing, run `dart analyze --fatal-infos`.

@@ -1,4 +1,50 @@
-# API errors
+# API
+
+## Authentication
+
+Every endpoint except `GET /health` requires an OIDC access token from the
+configured identity provider, sent as a bearer token:
+
+```http
+Authorization: Bearer <access token>
+```
+
+| Endpoint | Auth |
+| --- | --- |
+| `GET /health` | public |
+| `GET /me` | bearer token |
+| everything else | bearer token |
+
+New routes are protected by default because they are mounted after the
+authentication middleware.
+
+The server verifies the token's RS256 signature against the issuer's JWKS
+(found through OIDC discovery), and checks its issuer, audience, and expiry. It
+also requires the `sub` and `email` claims.
+
+A missing, malformed, expired, or otherwise invalid token returns `401` with a
+`WWW-Authenticate: Bearer` header and the error envelope below, with code
+`UNAUTHORIZED` and the generic message `invalid token`. The specific reason is
+written to server logs only. The token itself is never logged or returned.
+
+A `401` means the client must re-authenticate: refresh or obtain a new access
+token, then retry. The Dart client maps it to `UnauthorizedFailure`. Retrying
+with the same token will not succeed.
+
+### `GET /me`
+
+Returns the authenticated user from the verified token:
+
+```json
+{
+  "id": "user-123",
+  "email": "user@example.test"
+}
+```
+
+`id` is the token's `sub` claim and `email` is its `email` claim.
+
+## Errors
 
 Successful responses keep their endpoint-specific JSON shape. Error responses
 use a consistent JSON envelope:
@@ -16,22 +62,6 @@ incoming `X-Request-Id` value or generates a new one, returns it in the
 `X-Request-Id` response header, and includes it in request logs. Unexpected
 errors are logged with their stack trace; their internal message and stack are
 not returned to clients.
-
-Application routes require an OIDC access token in the
-`Authorization: Bearer <token>` header. The server verifies the token's
-signature, issuer, audience, and RS256 algorithm using the issuer's discovered
-JWKS endpoint. `/health` remains public. Authentication failures return
-`UNAUTHORIZED` with the generic message `invalid token` and a
-`WWW-Authenticate: Bearer` header; failure details are written to server logs.
-
-`GET /me` returns the authenticated user from the verified token:
-
-```json
-{
-  "id": "user-123",
-  "email": "user@example.test"
-}
-```
 
 | Code | HTTP | Dart failure |
 | --- | ---: | --- |
