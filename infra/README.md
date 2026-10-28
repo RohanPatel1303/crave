@@ -14,15 +14,51 @@ realm from `keycloak/crave-realm.json` on a fresh container. Keycloak skips the
 import if the realm already exists, so changes made in the admin console are lost
 when the container is recreated unless you re-export.
 
-To re-export after changing the realm in the admin console:
+To re-export after changing the realm in the admin console, run these from
+`infra/`. In dev mode Keycloak keeps its data in a single H2 database file that
+the running server locks, so `kc.sh export` can't run inside the live container
+(it fails with "The file is locked: .../keycloakdb.mv.db"). Instead, stop the
+server, copy its database out and export from a throwaway container:
 
 ```bash
-docker compose exec keycloak /opt/keycloak/bin/kc.sh export \
-  --file /tmp/crave-realm.json --realm crave --users realm_file
-docker compose cp keycloak:/tmp/crave-realm.json ./keycloak/crave-realm.json
+docker compose stop keycloak
+docker compose cp keycloak:/opt/keycloak/data/h2 ./kc-export-h2
+mkdir -p kc-export-out
+docker run --rm \
+  -v "$PWD/kc-export-h2:/opt/keycloak/data/h2" \
+  -v "$PWD/kc-export-out:/out" \
+  quay.io/keycloak/keycloak:26.8.1 \
+  export --file /out/crave-realm.json --realm crave --users same_file
+cp kc-export-out/crave-realm.json keycloak/crave-realm.json
+rm -rf kc-export-h2 kc-export-out
+docker compose start keycloak
 ```
 
-(`./keycloak` is mounted read-only in the container, so the export goes to `/tmp` first.)
+- `--users same_file` keeps the demo user inside the realm file. (`realm_file`
+  only works when exporting to a directory.)
+- Keep the image tag in the `docker run` line in sync with `docker-compose.yml`.
+- Review `git diff` before committing: an export captures everything set in the
+  console, including mistakes.
+
+To check that the file alone reproduces the realm, recreate the container so it
+imports from scratch:
+
+```bash
+docker compose down
+docker compose up -d
+```
+
+### Clients and the API audience
+
+| Client | Type | Flows | Purpose |
+| --- | --- | --- | --- |
+| `crave-customer-app` | public, PKCE `S256` | Authorization Code only | the Flutter app |
+| `crave-dev-cli` | public | Direct access grants only | getting tokens with `curl` in local dev |
+
+Both clients get the `crave-api-audience` client scope by default. Its audience
+mapper adds `crave-api` to the access token's `aud` claim, which the server
+requires (`OIDC_AUDIENCE=crave-api`). Keeping the mapper in one shared scope
+means every client that may call the API gets the same audience from one place.
 
 ### What's in the file, and why it's acceptable to commit it
 

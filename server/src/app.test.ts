@@ -7,12 +7,22 @@ import { z } from "zod";
 import { createApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { ApiError } from "./error.js";
+import type { TokenVerifier } from "./token-verifier.js";
 
 const logger = pino({ level: "silent" });
+const config = loadConfig({
+  OIDC_ISSUER: "http://localhost:8081/realms/crave",
+  OIDC_AUDIENCE: "crave-api",
+});
+const tokenVerifier: TokenVerifier = () =>
+  Promise.resolve({
+    id: "test-user",
+    email: "test@example.test",
+  });
 
 describe("GET /health", () => {
   it("returns the health JSON without starting a listener", async () => {
-    const app = createApp({ config: loadConfig({}), logger });
+    const app = createApp({ config, logger, tokenVerifier });
 
     const response = await request(app).get("/health");
 
@@ -21,7 +31,7 @@ describe("GET /health", () => {
   });
 
   it("generates a request ID and returns it in the response header", async () => {
-    const app = createApp({ config: loadConfig({}), logger });
+    const app = createApp({ config, logger, tokenVerifier });
 
     const response = await request(app).get("/health");
 
@@ -30,7 +40,7 @@ describe("GET /health", () => {
   });
 
   it("reuses a reasonable incoming request ID", async () => {
-    const app = createApp({ config: loadConfig({}), logger });
+    const app = createApp({ config, logger, tokenVerifier });
 
     const response = await request(app)
       .get("/health")
@@ -40,7 +50,7 @@ describe("GET /health", () => {
   });
 
   it("replaces an invalid incoming request ID", async () => {
-    const app = createApp({ config: loadConfig({}), logger });
+    const app = createApp({ config, logger, tokenVerifier });
 
     const response = await request(app)
       .get("/health")
@@ -53,10 +63,11 @@ describe("GET /health", () => {
 
 describe("error responses", () => {
   it("returns a request-ID-bearing JSON envelope for unknown routes", async () => {
-    const app = createApp({ config: loadConfig({}), logger });
+    const app = createApp({ config, logger, tokenVerifier });
 
     const response = await request(app)
       .get("/missing")
+      .set("Authorization", "Bearer test-token")
       .set("X-Request-Id", "missing-route-123");
 
     expect(response.status).toBe(404);
@@ -72,6 +83,7 @@ describe("error responses", () => {
   it("maps ApiError to its status and envelope", async () => {
     const response = await request(createErrorTestApp())
       .get("/api-error")
+      .set("Authorization", "Bearer test-token")
       .set("X-Request-Id", "test-request-id");
 
     expect(response.status).toBe(409);
@@ -86,6 +98,7 @@ describe("error responses", () => {
   it("maps Zod errors to a validation response", async () => {
     const response = await request(createErrorTestApp())
       .get("/validation")
+      .set("Authorization", "Bearer test-token")
       .set("X-Request-Id", "test-request-id");
 
     expect(response.status).toBe(400);
@@ -107,6 +120,7 @@ describe("error responses", () => {
     const testLogger = pino({ level: "error" }, destination);
     const response = await request(createErrorTestApp(testLogger))
       .get("/unexpected")
+      .set("Authorization", "Bearer test-token")
       .set("X-Request-Id", "test-request-id");
 
     expect(response.status).toBe(500);
@@ -141,8 +155,9 @@ function createErrorTestApp(testLogger: Logger = logger) {
   });
 
   return createApp({
-    config: loadConfig({}),
+    config,
     logger: testLogger,
+    tokenVerifier,
     extraRoutes: [routes],
   });
 }

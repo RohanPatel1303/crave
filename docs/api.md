@@ -17,6 +17,22 @@ incoming `X-Request-Id` value or generates a new one, returns it in the
 errors are logged with their stack trace; their internal message and stack are
 not returned to clients.
 
+Application routes require an OIDC access token in the
+`Authorization: Bearer <token>` header. The server verifies the token's
+signature, issuer, audience, and RS256 algorithm using the issuer's discovered
+JWKS endpoint. `/health` remains public. Authentication failures return
+`UNAUTHORIZED` with the generic message `invalid token` and a
+`WWW-Authenticate: Bearer` header; failure details are written to server logs.
+
+`GET /me` returns the authenticated user from the verified token:
+
+```json
+{
+  "id": "user-123",
+  "email": "user@example.test"
+}
+```
+
 | Code | HTTP | Dart failure |
 | --- | ---: | --- |
 | `VALIDATION` | 400 | `ValidationFailure` |
