@@ -16,6 +16,12 @@ export const AppConfig = z.object({
     .enum(["development", "test", "production"])
     .default("development"),
   LOG_LEVEL: z.enum(logLevels).default("info"),
+  OIDC_ISSUER: z.url({ protocol: /^https?$/ }).refine((value) => {
+    if (!URL.canParse(value)) return false;
+    const url = new URL(value);
+    return url.search === "" && url.hash === "";
+  }, "Issuer URL must not include a query or fragment"),
+  OIDC_AUDIENCE: z.string().trim().min(1),
 });
 
 export type Config = z.infer<typeof AppConfig>;

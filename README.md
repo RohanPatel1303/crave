@@ -72,8 +72,14 @@ Install dependencies and start the Node.js API in development mode:
 ```sh
 cd server
 npm ci
+export OIDC_ISSUER=http://localhost:8081/realms/crave
+export OIDC_AUDIENCE=crave-api
 npm run dev
 ```
+
+`OIDC_ISSUER` and `OIDC_AUDIENCE` are required. The server uses OIDC discovery
+at the issuer URL to find its JWKS endpoint, so the configured identity
+provider must be reachable when the server starts.
 
 Run the server tests and coverage gate with `npm test` from `server/`. Other
 checks are available with `npm run lint`, `npm run format:check`, and

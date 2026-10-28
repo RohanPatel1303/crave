@@ -30,3 +30,7 @@ server/node_modules/
 
 # macOS
 .DS_Store
+
+# Keycloak realm export scratch (contains the dev database)
+infra/kc-export-h2/
+infra/kc-export-out/
