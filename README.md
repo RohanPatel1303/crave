@@ -46,17 +46,19 @@ dependency layers.
 ## Getting started
 
 Install the Flutter SDK version pinned in `.fvmrc`, activate Melos, and resolve
-the workspace:
+the workspace. These commands work in both macOS Terminal and Windows
+PowerShell:
 
-```sh
+```text
 fvm install
 dart pub global activate melos
 fvm flutter pub get
 ```
 
-Run the customer app's `dev` flavor from its directory:
+Run the customer app's `dev` flavor from its directory. This command works in
+both macOS Terminal and Windows PowerShell:
 
-```sh
+```text
 cd apps/customer_app
 fvm flutter run --flavor dev --dart-define-from-file=config/dev.json
 ```
@@ -72,13 +74,27 @@ this repository, so the app cannot currently be launched from this checkout.
 The server needs an OIDC identity provider. Locally that is Keycloak in
 Docker, which imports the `crave` realm from
 [infra/keycloak/crave-realm.json](infra/keycloak/crave-realm.json) on a fresh
-container. Start it from `infra/`:
+container. Start it from the repository root:
 
-```sh
+#### macOS (Terminal)
+
+```bash
 cd infra
 cp .env.example .env   # first time only; set an admin password
 docker compose up -d
 ```
+
+#### Windows (PowerShell)
+
+```powershell
+Set-Location infra
+Copy-Item .env.example .env   # first time only; set an admin password
+docker compose up -d
+```
+
+Docker Desktop must be running before you start Keycloak. For details,
+troubleshooting, and realm export instructions, see
+[infra/README.md](infra/README.md).
 
 Keycloak is ready when
 `http://localhost:8081/realms/crave/.well-known/openid-configuration` returns
@@ -96,11 +112,23 @@ take effect when the container is first created.
 
 Install dependencies and start the Node.js API in development mode:
 
-```sh
+#### macOS (Terminal)
+
+```bash
 cd server
 npm ci
 export OIDC_ISSUER=http://localhost:8081/realms/crave
 export OIDC_AUDIENCE=crave-api
+npm run dev
+```
+
+#### Windows (PowerShell)
+
+```powershell
+Set-Location server
+npm ci
+$env:OIDC_ISSUER = "http://localhost:8081/realms/crave"
+$env:OIDC_AUDIENCE = "crave-api"
 npm run dev
 ```
 
@@ -114,7 +142,12 @@ provider must be reachable when the server starts.
 > grant enabled. Never use it or its configuration outside local development;
 > see [infra/README.md](infra/README.md).
 
-With [Keycloak](#keycloak) and the [API](#api) running, find the token endpoint in the discovery document:
+With [Keycloak](#keycloak) and the [API](#api) running, use the commands for
+your shell.
+
+#### macOS (Terminal)
+
+Find the token endpoint in the discovery document:
 
 ```sh
 curl -s http://localhost:8081/realms/crave/.well-known/openid-configuration \
@@ -150,18 +183,76 @@ Call the API. A fresh token returns `200` with the user's `id` and `email`:
 curl -i -H "Authorization: Bearer $TOKEN" http://localhost:8080/me
 ```
 
+#### Windows (PowerShell)
+
+Find the token endpoint in the discovery document:
+
+```powershell
+$discovery = Invoke-RestMethod `
+  -Uri "http://localhost:8081/realms/crave/.well-known/openid-configuration"
+$discovery.token_endpoint
+```
+
+Get an access token. PowerShell prompts for the demo password without echoing
+it or placing it in shell history:
+
+```powershell
+$securePassword = Read-Host "Password for demo@crave.dev" -AsSecureString
+$passwordPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
+try {
+  $demoPassword = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($passwordPointer)
+  $tokenResponse = Invoke-RestMethod `
+    -Uri $discovery.token_endpoint `
+    -Method Post `
+    -ContentType "application/x-www-form-urlencoded" `
+    -Body @{
+      grant_type = "password"
+      client_id = "crave-dev-cli"
+      username = "demo@crave.dev"
+      password = $demoPassword
+      scope = "openid"
+    }
+  $TOKEN = $tokenResponse.access_token
+} finally {
+  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($passwordPointer)
+  Remove-Variable demoPassword, securePassword -ErrorAction SilentlyContinue
+}
+```
+
+Read the claims locally. Check `iss`, `aud` (must include `crave-api`), `sub`
+and `exp`:
+
+```powershell
+$payload = $TOKEN.Split('.')[1].Replace('-', '+').Replace('_', '/')
+switch ($payload.Length % 4) {
+  2 { $payload += '==' }
+  3 { $payload += '=' }
+}
+[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($payload)) |
+  ConvertFrom-Json
+```
+
+Call the API. A fresh token returns the user's `id` and `email`:
+
+```powershell
+Invoke-RestMethod `
+  -Uri "http://localhost:8080/me" `
+  -Headers @{ Authorization = "Bearer $TOKEN" }
+```
+
 Access tokens last 5 minutes. Calling `/me` again after that returns `401`
 with `"code": "UNAUTHORIZED"`.
 
-Run the server tests and coverage gate with `npm test` from `server/`. Other
-checks are available with `npm run lint`, `npm run format:check`, and
-`npm run typecheck`.
+Run the server tests and coverage gate with `npm test` from `server/`. This
+command works in both macOS Terminal and Windows PowerShell. Other checks are
+available with `npm run lint`, `npm run format:check`, and `npm run typecheck`.
 
 ## Quality gates
 
-Run these commands from the repository root:
+Run these commands from the repository root. They work in both macOS Terminal
+and Windows PowerShell:
 
-```sh
+```text
 fvm dart format --set-exit-if-changed .
 fvm dart analyze --fatal-infos
 fvm dart run melos run deps:check
