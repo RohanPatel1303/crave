@@ -11,6 +11,8 @@
 - Never include stack traces or internal error details in API responses.
 - Protect server routes with `requireAuth`; only `/health` is public, so mount new routes after it in `createApp`.
 - Never log access tokens or the `Authorization` header, including inside error messages.
+- Only `packages/data/api_client` may depend on Dio; features use `ApiClient`.
+- HTTP logs never include headers, bodies, or query strings.
 - Every change ships with relevant tests; keep total line coverage at or above 80%.
 - Before finishing, run `dart format --set-exit-if-changed .`.
 - Before finishing, run `dart analyze --fatal-infos`.

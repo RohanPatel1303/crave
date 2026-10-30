@@ -1,39 +1,33 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# API client
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+This package provides the app's shared HTTP client and typed `CurrentUser`
+model. It centralizes authentication, request IDs, logging, and conversion of
+transport errors into core `AppFailure` values.
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/tools/pub/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
+## One rule
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
-
-## Features
-
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+Features call `ApiClient`; they do not use Dio directly.
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
 ```dart
-const like = 'sample';
+final client = ApiClient(
+  baseUrl: Uri.parse('https://api.example.test'),
+  accessToken: tokenProvider,
+  logger: appLogger,
+);
+
+final status = await client.get<String>(
+  '/status',
+  decode: (json) {
+    if (json case {'status': final String value}) return value;
+    throw const FormatException('Invalid status response.');
+  },
+);
+
+final currentUser = await client.me();
 ```
 
-## Additional information
-
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+Both calls return `Result<T>`, so expected failures are returned rather than
+thrown. See the [API error table](../../../docs/api.md#errors) for the mapping
+from server error codes to Dart failures.

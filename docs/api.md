@@ -73,3 +73,7 @@ not returned to clients.
 
 `NOT_FOUND` maps to `ServerFailure` because the Dart client has no dedicated
 not-found failure type, and this API does not need to introduce one yet.
+
+The Dart mapping lives in
+[`failure_mapping.dart`](../packages/data/api_client/lib/src/failure_mapping.dart);
+update it together with this table.
