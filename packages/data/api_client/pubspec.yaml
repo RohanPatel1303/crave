@@ -1,0 +1,22 @@
+resolution: workspace
+publish_to: none
+name: api_client
+description: API client package for the Crave project.
+version: 1.0.0
+# repository: https://github.com/my_org/my_repo
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  core: ^1.0.0
+  dio: ^5.11.1
+  flutter:
+    sdk: flutter
+  
+
+
+dev_dependencies:
+  coverage: ^1.0.0
+  flutter_test:
+    sdk: flutter

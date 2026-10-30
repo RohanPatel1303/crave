@@ -36,7 +36,7 @@ Future<void> main() async {
     packages.add(
       PackageInfo(
         name: pubspec['name'] as String,
-        path: path,
+        path: path.replaceAll(Platform.pathSeparator, '/'),
         dependencies: dependencies,
       ),
     );
