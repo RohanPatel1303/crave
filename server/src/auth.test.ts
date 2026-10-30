@@ -40,6 +40,22 @@ describe("OIDC authentication", () => {
     });
   });
 
+  it("rejects a correctly signed token with no email claim", async () => {
+    const token = await signTokenWithoutClaim("email");
+
+    const response = await getMe(`Bearer ${token}`);
+
+    expectUnauthorized(response);
+  });
+
+  it("rejects a correctly signed token with no subject", async () => {
+    const token = await signTokenWithoutClaim("sub");
+
+    const response = await getMe(`Bearer ${token}`);
+
+    expectUnauthorized(response);
+  });
+
   it("rejects a request with no Authorization header", async () => {
     const response = await getMe();
 
@@ -150,6 +166,15 @@ describe("OIDC authentication", () => {
     return new SignJWT({ ...validClaims(), ...overrides })
       .setProtectedHeader({ alg: "RS256" })
       .sign(key);
+  }
+
+  function signTokenWithoutClaim(claim: "email" | "sub"): Promise<string> {
+    const claims = validClaims();
+    delete claims[claim];
+
+    return new SignJWT(claims)
+      .setProtectedHeader({ alg: "RS256" })
+      .sign(privateKey);
   }
 });
 
