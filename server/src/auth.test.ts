@@ -169,22 +169,19 @@ describe("OIDC authentication", () => {
   }
 
   function signTokenWithoutClaim(claim: "email" | "sub"): Promise<string> {
-    const claims = validClaims();
-    delete claims[claim];
-
-    return new SignJWT(claims)
+    return new SignJWT(validClaims(claim))
       .setProtectedHeader({ alg: "RS256" })
       .sign(privateKey);
   }
 });
 
-function validClaims(): JWTPayload {
+function validClaims(exclude?: "email" | "sub"): JWTPayload {
   const now = Math.floor(Date.now() / 1000);
   return {
     iss: issuer,
     aud: audience,
-    sub: "user-123",
-    email: "user@example.test",
+    ...(exclude === "sub" ? {} : { sub: "user-123" }),
+    ...(exclude === "email" ? {} : { email: "user@example.test" }),
     iat: now,
     exp: now + 300,
   };
