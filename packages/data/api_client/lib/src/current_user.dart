@@ -1,5 +1,4 @@
-import 'package:flutter/foundation.dart' show immutable;
-
+import 'package:meta/meta.dart';
 /// The authenticated user returned by the API.
 @immutable
 final class CurrentUser {
