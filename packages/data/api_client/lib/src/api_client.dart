@@ -4,8 +4,7 @@ import 'package:api_client/src/current_user.dart';
 import 'package:api_client/src/failure_mapping.dart';
 import 'package:core/core.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show visibleForTesting;
-
+import 'package:meta/meta.dart';
 /// Provides the current access token, or `null` when the user is signed out.
 typedef AccessTokenProvider = Future<String?> Function();
 
