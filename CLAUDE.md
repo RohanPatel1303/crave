@@ -13,6 +13,8 @@
 - Never log access tokens or the `Authorization` header, including inside error messages.
 - Only `packages/data/api_client` may depend on Dio; features use `ApiClient`.
 - HTTP logs never include headers, bodies, or query strings.
+- Tokens live only in secure storage through `TokenStore`; never put them in Bloc state, logs, or other persistence.
+- Refresh tokens only through `AuthSession.refresh()`, which is single-flight; never call `IdentityGateway.refresh` or add another refresh path.
 - Every change ships with relevant tests; keep total line coverage at or above 80%.
 - Before finishing, run `dart format --set-exit-if-changed .`.
 - Before finishing, run `dart analyze --fatal-infos`.
