@@ -253,11 +253,118 @@ void main() {
       );
     });
   });
+
+  group('ApiClient refresh on 401', () {
+    test('retries once with the refreshed token and returns Ok', () async {
+      var refreshCalls = 0;
+      final sentTokens = <Object?>[];
+      final client = _client(
+        accessToken: () async => 'old-token',
+        refreshAccessToken: () async {
+          refreshCalls++;
+          return 'new-token';
+        },
+        respond: (options) {
+          // Recorded per send: the retry reuses the same RequestOptions.
+          final authorization = options.headers['Authorization'];
+          sentTokens.add(authorization);
+          return authorization == 'Bearer new-token'
+              ? _jsonResponse({'id': 'user-123', 'email': 'user@example.test'})
+              : _unauthorized();
+        },
+      );
+
+      final result = await client.apiClient.me();
+
+      expect(
+        result,
+        const Ok(CurrentUser(id: 'user-123', email: 'user@example.test')),
+      );
+      expect(refreshCalls, 1);
+      expect(sentTokens, ['Bearer old-token', 'Bearer new-token']);
+    });
+
+    test('gives up after one retry when the server keeps saying 401', () async {
+      var refreshCalls = 0;
+      final client = _client(
+        refreshAccessToken: () async {
+          refreshCalls++;
+          return 'new-token';
+        },
+        respond: (_) => _unauthorized(),
+      );
+
+      final result = await client.apiClient.me();
+
+      expect(result, _isUnauthorized);
+      expect(refreshCalls, 1);
+      expect(client.adapter.requests, hasLength(2));
+    });
+
+    test('does not retry when the refresher returns null', () async {
+      var refreshCalls = 0;
+      final client = _client(
+        refreshAccessToken: () async {
+          refreshCalls++;
+          return null;
+        },
+        respond: (_) => _unauthorized(),
+      );
+
+      final result = await client.apiClient.me();
+
+      expect(result, _isUnauthorized);
+      expect(refreshCalls, 1);
+      expect(client.adapter.requests, hasLength(1));
+    });
+
+    test('never refreshes or retries a public request', () async {
+      var refreshCalls = 0;
+      final client = _client(
+        refreshAccessToken: () async {
+          refreshCalls++;
+          return 'new-token';
+        },
+        respond: (_) => _unauthorized(),
+      );
+
+      final result = await client.apiClient.get<Object?>(
+        '/public',
+        decode: (json) => json,
+        authenticated: false,
+      );
+
+      expect(result, isA<Err<Object?>>());
+      expect(refreshCalls, 0);
+      expect(client.adapter.requests, hasLength(1));
+    });
+
+    test('without a refresher, a 401 fails after a single request', () async {
+      final client = _client(respond: (_) => _unauthorized());
+
+      final result = await client.apiClient.me();
+
+      expect(result, _isUnauthorized);
+      expect(client.adapter.requests, hasLength(1));
+    });
+  });
 }
+
+final _isUnauthorized = isA<Err<CurrentUser>>().having(
+  (error) => error.failure,
+  'failure',
+  isA<UnauthorizedFailure>(),
+);
+
+Future<ResponseBody> _unauthorized() => _jsonResponse({
+  'code': 'UNAUTHORIZED',
+  'message': 'invalid token',
+}, statusCode: 401);
 
 _ClientHarness _client({
   Uri? baseUrl,
   AccessTokenProvider? accessToken,
+  AccessTokenProvider? refreshAccessToken,
   AppLogger? logger,
   String Function()? newRequestId,
   Future<ResponseBody> Function(RequestOptions options)? respond,
@@ -268,6 +375,7 @@ _ClientHarness _client({
   final apiClient = ApiClient.withAdapter(
     baseUrl: baseUrl ?? Uri.parse('http://host'),
     accessToken: accessToken ?? () async => 'test-token',
+    refreshAccessToken: refreshAccessToken,
     logger: logger ?? ConsoleLogger(minLevel: LogLevel.debug, sink: (line) {}),
     adapter: adapter,
     newRequestId: newRequestId,

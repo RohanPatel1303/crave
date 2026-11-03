@@ -12,13 +12,18 @@ typedef AccessTokenProvider = Future<String?> Function();
 /// Makes authenticated and public requests to the Crave API.
 final class ApiClient {
   /// Creates an API client using Dio's default platform adapter.
+  ///
+  /// When [refreshAccessToken] is given, an authenticated request that gets a
+  /// 401 is retried once with the token it returns.
   ApiClient({
     required Uri baseUrl,
     required AccessTokenProvider accessToken,
     required AppLogger logger,
+    AccessTokenProvider? refreshAccessToken,
   }) : this._(
          baseUrl: baseUrl,
          accessTokenProvider: accessToken,
+         refreshAccessTokenProvider: refreshAccessToken,
          appLogger: logger,
          adapter: null,
          requestIdGenerator: _generateRequestId,
@@ -31,10 +36,12 @@ final class ApiClient {
     required AccessTokenProvider accessToken,
     required AppLogger logger,
     required HttpClientAdapter adapter,
+    AccessTokenProvider? refreshAccessToken,
     String Function()? newRequestId,
   }) : this._(
          baseUrl: baseUrl,
          accessTokenProvider: accessToken,
+         refreshAccessTokenProvider: refreshAccessToken,
          appLogger: logger,
          adapter: adapter,
          requestIdGenerator: newRequestId ?? _generateRequestId,
@@ -43,10 +50,12 @@ final class ApiClient {
   ApiClient._({
     required Uri baseUrl,
     required AccessTokenProvider accessTokenProvider,
+    required AccessTokenProvider? refreshAccessTokenProvider,
     required AppLogger appLogger,
     required HttpClientAdapter? adapter,
     required String Function() requestIdGenerator,
   }) : _accessToken = accessTokenProvider,
+       _refreshAccessToken = refreshAccessTokenProvider,
        _logger = appLogger,
        _newRequestId = requestIdGenerator {
     _dio = Dio(
@@ -71,7 +80,9 @@ final class ApiClient {
       ),
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          if (options.extra['authenticated'] == false) {
+          // A retry already carries the refreshed token.
+          if (options.extra['authenticated'] == false ||
+              options.extra[_retriedKey] == true) {
             handler.next(options);
             return;
           }
@@ -89,6 +100,36 @@ final class ApiClient {
 
           options.headers['Authorization'] = 'Bearer $token';
           handler.next(options);
+        },
+        onError: (exception, handler) async {
+          final options = exception.requestOptions;
+          final refresh = _refreshAccessToken;
+          // Retrying a retry would loop forever against a server that keeps
+          // answering 401, so each request gets at most one.
+          if (refresh == null ||
+              exception.response?.statusCode != 401 ||
+              options.extra['authenticated'] == false ||
+              options.extra[_retriedKey] == true) {
+            handler.next(exception);
+            return;
+          }
+
+          try {
+            // No lock here on purpose: the refresher is AuthSession.refresh,
+            // which is single-flight, so concurrent 401s already share one
+            // refresh call. A second lock would only duplicate that.
+            final token = await refresh();
+            if (token == null || token.isEmpty) {
+              handler.next(exception);
+              return;
+            }
+
+            options.extra[_retriedKey] = true;
+            options.headers['Authorization'] = 'Bearer $token';
+            handler.resolve(await _dio.fetch<Object?>(options));
+          } on Object {
+            handler.next(exception);
+          }
         },
       ),
       InterceptorsWrapper(
@@ -124,8 +165,10 @@ final class ApiClient {
   }
 
   static const _stopwatchKey = 'apiClient.stopwatch';
+  static const _retriedKey = 'retried';
 
   final AccessTokenProvider _accessToken;
+  final AccessTokenProvider? _refreshAccessToken;
   final AppLogger _logger;
   final String Function() _newRequestId;
   late final Dio _dio;
