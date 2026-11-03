@@ -24,8 +24,8 @@ same layer cannot depend on one another. See
 | Layer | Packages | May depend on |
 | --- | --- | --- |
 | 0 | `packages/core` | External packages only; never Flutter |
-| 1 | `packages/design_system`, `packages/data` | Layer 0 and external packages |
-| 2 | `packages/features/*` | Layers 0 and 1, plus external packages |
+| 1 | `packages/design_system`, `packages/data/api_client`, `packages/data/auth` | Layer 0 and external packages |
+| 2 | `packages/features/*`: `packages/features/auth` (`auth_feature`) | Layers 0 and 1, plus external packages |
 | 3 | `apps/*` | Layers 0, 1, and 2, plus external packages |
 
 The `tool/` package is repository tooling and is exempt from the product
@@ -42,6 +42,8 @@ dependency layers.
 | 0005 | Layered package dependencies | [Read](docs/adr/0005-layered-package-dependencies.md) |
 | 0006 | Backend stack | [Read](docs/adr/0006-backend-stack.md) |
 | 0007 | Hosted sign-in with OIDC | [Read](docs/adr/0007-hosted-sign-in-with-oidc.md) |
+| 0008 | HTTP client behind an API client | [Read](docs/adr/0008-http-client-behind-api-client.md) |
+| 0009 | Token storage and refresh | [Read](docs/adr/0009-token-storage-and-refresh.md) |
 
 ## Getting started
 

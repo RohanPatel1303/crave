@@ -1,9 +1,26 @@
 # Auth
 
-This package owns the signed-in session: OIDC sign-in through the system
-browser, token storage, refresh and sign-out. See
+This package owns the signed-in session and its tokens:
+
+- OIDC sign-in through the system browser;
+- token storage in platform secure storage;
+- token refresh, single-flight through `AuthSession.refresh()`;
+- sign-out.
+
+It is the only code that reads or writes tokens. See
 [ADR 0009](../../../docs/adr/0009-token-storage-and-refresh.md) for why tokens
 live in secure storage and how refresh works.
+
+## Dependencies
+
+This is a layer 1 data package. It depends only on `core` and the two
+platform plugins. Dependencies point one way: `auth_feature`
+(`packages/features/auth`) depends on this package, never the reverse, so
+this package knows nothing about Bloc or UI.
+
+It also does not depend on `api_client`, which sits in the same layer. The app
+connects the two by passing `AuthSession`'s methods to `ApiClient`, as shown
+below.
 
 ## Pieces
 
@@ -35,6 +52,7 @@ final session = AuthSession(
 final apiClient = ApiClient(
   baseUrl: apiBaseUrl,
   accessToken: session.accessToken,
+  refreshAccessToken: session.refresh,
   logger: appLogger,
 );
 ```

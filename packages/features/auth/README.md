@@ -1,7 +1,16 @@
 # Auth feature
 
-`AuthBloc` tracks whether the user is signed in. It drives `AuthSession` from
-the `auth` data package and turns its results into states for the UI.
+This package owns the app's signed-in state. `AuthBloc` turns sign-in,
+sign-out and session expiry into states the UI can render. It owns no tokens:
+storing and refreshing them is the job of `AuthSession` in the `auth` data
+package.
+
+## Dependencies
+
+This is a layer 2 feature package. It depends on `auth`
+(`packages/data/auth`) and `core`. Dependencies point one way: this package
+uses `auth`, and `auth` never imports this package or `flutter_bloc`. Like
+every feature, it must not depend on other feature packages.
 
 The package is named `auth_feature` because `packages/data/auth` already uses
 the name `auth`, and package names must be unique in the workspace.
