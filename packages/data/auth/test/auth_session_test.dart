@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:auth/auth.dart';
 import 'package:core/core.dart';
@@ -84,6 +85,24 @@ void main() {
       expect(gateway.refreshCalls, ['refresh-1']);
       expect(store.tokens, _tokens('2'));
     });
+
+    test('falls back to the stored token when refresh fails offline', () async {
+      store.tokens = _tokens('1', expiresIn: const Duration(seconds: 10));
+      gateway.onRefresh = (_) async =>
+          throw const SocketException('Network is unreachable');
+
+      final token = await session.accessToken();
+
+      expect(token, 'access-1');
+      expect(gateway.refreshCalls, ['refresh-1']);
+    });
+
+    test('returns null when the refresh token is rejected', () async {
+      store.tokens = _tokens('1', expiresIn: const Duration(seconds: 10));
+      gateway.onRefresh = (_) async => throw const RefreshTokenRejected();
+
+      expect(await session.accessToken(), isNull);
+    });
   });
 
   group('refresh', () {
@@ -119,22 +138,34 @@ void main() {
       },
     );
 
+    test('clears the store, emits expired once and returns null when the '
+        'refresh token is rejected', () async {
+      store.tokens = _tokens('1');
+      gateway.onRefresh = (_) async => throw const RefreshTokenRejected();
+      final expiredEvents = _recordExpired(session);
+
+      final token = await session.refresh();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(token, isNull);
+      expect(store.tokens, isNull);
+      expect(expiredEvents, hasLength(1));
+    });
+
     test(
-      'clears the store, emits expired once and returns null on failure',
+      'keeps the tokens and does not emit expired on a network error',
       () async {
         store.tokens = _tokens('1');
         gateway.onRefresh = (_) async =>
-            throw PlatformException(code: 'invalid_grant');
-        final expiredEvents = <void>[];
-        final subscription = session.expired.listen(expiredEvents.add);
-        addTearDown(subscription.cancel);
+            throw const SocketException('Network is unreachable');
+        final expiredEvents = _recordExpired(session);
 
         final token = await session.refresh();
         await Future<void>.delayed(Duration.zero);
 
         expect(token, isNull);
-        expect(store.tokens, isNull);
-        expect(expiredEvents, hasLength(1));
+        expect(store.tokens, _tokens('1'));
+        expect(expiredEvents, isEmpty);
       },
     );
   });
@@ -182,4 +213,11 @@ void main() {
       expect(await session.hasSession(), isTrue);
     });
   });
+}
+
+List<void> _recordExpired(AuthSession session) {
+  final events = <void>[];
+  final subscription = session.expired.listen(events.add);
+  addTearDown(subscription.cancel);
+  return events;
 }

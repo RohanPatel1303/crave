@@ -47,17 +47,28 @@ final class AppAuthGateway implements IdentityGateway {
 
   @override
   Future<TokenSet> refresh(String refreshToken) async {
-    final response = await _appAuth.token(
-      TokenRequest(
-        _clientId,
-        _redirectUrl,
-        issuer: _issuer.toString(),
-        refreshToken: refreshToken,
-        scopes: _scopes,
-        allowInsecureConnections: _allowInsecureConnections,
-      ),
-    );
-    return _toTokenSet(response);
+    try {
+      final response = await _appAuth.token(
+        TokenRequest(
+          _clientId,
+          _redirectUrl,
+          issuer: _issuer.toString(),
+          refreshToken: refreshToken,
+          scopes: _scopes,
+          allowInsecureConnections: _allowInsecureConnections,
+        ),
+      );
+      return _toTokenSet(response);
+    } on FlutterAppAuthPlatformException catch (error) {
+      // `error` is the provider's OAuth error code. Only invalid_grant means
+      // the refresh token itself is dead; anything else, such as a network
+      // failure, is rethrown so the session keeps its tokens.
+      if (error.platformErrorDetails.error ==
+          FlutterAppAuthOAuthError.invalidGrant) {
+        throw const RefreshTokenRejected();
+      }
+      rethrow;
+    }
   }
 
   @override

@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-02
+- Amended: 2026-11-03 (see [Amendments](#amendments))
 
 ## Context
 
@@ -79,8 +80,14 @@ refresh shared by all callers.
 - Before an authenticated request, if the access token expires within a small
   margin, refresh first. The margin absorbs clock skew and latency.
 - If a request still gets a 401, refresh once and retry that request once. A
-  second 401, or a failed refresh, clears the stored tokens and surfaces
-  `UnauthorizedFailure`, which sends the user back to sign-in.
+  second 401 surfaces `UnauthorizedFailure` without clearing the stored
+  tokens.
+- Only a rejected refresh token ends the session. When the provider answers
+  the refresh with the OAuth error `invalid_grant`, the stored tokens are
+  cleared and the session reports that it expired, which sends the user back
+  to sign-in. Any other refresh failure, such as no network, keeps the tokens.
+  The stored access token is then used as is, so an offline request fails as
+  a `NetworkFailure`, not as a sign-out.
 - Concurrent requests that need a refresh await the same pending refresh
   instead of starting their own.
 
@@ -110,13 +117,38 @@ rejected before it did anything.
   user out at random. The shared refresh is a small piece of stateful code,
   and it needs its own tests:
   - concurrent callers trigger exactly one refresh;
-  - a failed refresh rejects every waiting caller;
+  - a failed refresh fails every waiting caller the same way;
   - a new refresh can start after the previous one finishes.
 - **Bounded retries.** A request is retried at most once, so a persistent 401
-  turns into a sign-out instead of a loop.
+  turns into an `UnauthorizedFailure` instead of a loop.
+- **Offline keeps the session.** A user who opens the app without a network
+  after the access token expired stays signed in and sees network errors,
+  which is the true state. The cost is that the gateway must tell a rejected
+  refresh token apart from every other failure. It does that through the
+  provider's `invalid_grant` code, a mapping that sits in the platform adapter
+  and can only be checked on a device.
 - **When to revisit:**
   - The threat model changes, for example a requirement to bind tokens to the
     device (DPoP), or to keep the refresh token out of the app via a
     backend-for-frontend.
   - The production identity provider's refresh-token rules make the
     single-flight design unnecessary or insufficient.
+
+## Amendments
+
+### 2026-11-03: only a rejected refresh token ends the session
+
+The original decision cleared the stored tokens on any failed refresh. That
+treated "no network" the same as "session revoked": opening the app offline
+more than five minutes after the last use signed the user out, which is the
+worst case for an offline-first app.
+
+Now only the provider's `invalid_grant` response to a refresh ends the
+session. `IdentityGateway.refresh` throws `RefreshTokenRejected` for that case
+alone, and `AuthSession` clears the tokens and emits `expired` only when it
+sees it. Every other error keeps the tokens, and `accessToken()` falls back to
+the stored access token.
+
+This amendment also corrects the Decision's wording on a second 401: it
+surfaces `UnauthorizedFailure` but does not clear the stored tokens, which is
+how `ApiClient` already behaved.
