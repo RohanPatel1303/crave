@@ -52,6 +52,9 @@ final class AuthSession {
   /// Returns a usable access token, or `null` when signed out.
   ///
   /// Refreshes first when the stored token expires within [refreshMargin].
+  /// If that refresh fails for a reason other than a rejected refresh token,
+  /// such as no network, returns the stored token anyway: offline, the request
+  /// then fails as a network error rather than as a sign-out.
   Future<String?> accessToken() async {
     final tokens = await _store.read();
     if (tokens == null) return null;
@@ -59,13 +62,15 @@ final class AuthSession {
     final refreshAt = tokens.accessTokenExpiresAt.subtract(refreshMargin);
     if (_now().isBefore(refreshAt)) return tokens.accessToken;
 
-    return refresh();
+    return await refresh() ?? (await _store.read())?.accessToken;
   }
 
   /// Replaces the stored tokens and returns the new access token.
   ///
-  /// Concurrent callers share one refresh. On failure the session is cleared,
-  /// [expired] emits, and this returns `null`.
+  /// Concurrent callers share one refresh. Returns `null` if it fails. Only a
+  /// [RefreshTokenRejected] ends the session: the store is cleared and
+  /// [expired] emits. Any other error, such as no network, keeps the tokens
+  /// so a later refresh can succeed.
   Future<String?> refresh() =>
       _refreshing ??= _doRefresh().whenComplete(() => _refreshing = null);
 
@@ -77,9 +82,11 @@ final class AuthSession {
       final refreshed = await _gateway.refresh(tokens.refreshToken);
       await _store.write(refreshed);
       return refreshed.accessToken;
-    } on Object {
+    } on RefreshTokenRejected {
       await _store.clear();
       _expired.add(null);
+      return null;
+    } on Object {
       return null;
     }
   }

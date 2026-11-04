@@ -58,5 +58,9 @@ final apiClient = ApiClient(
 ```
 
 `accessToken()` refreshes the token when it expires within 30 seconds.
-Concurrent refreshes share one request to the provider. When a refresh fails,
-the session is cleared and `expired` emits, so the app can return to sign-in.
+Concurrent refreshes share one request to the provider. Only a rejected
+refresh token (`RefreshTokenRejected`, the OAuth `invalid_grant` error) ends
+the session: the tokens are cleared and `expired` emits, so the app can return
+to sign-in. Any other refresh failure, such as no network, keeps the tokens,
+and `accessToken()` returns the stored one. Offline, the request then fails as
+a `NetworkFailure` instead of signing the user out.

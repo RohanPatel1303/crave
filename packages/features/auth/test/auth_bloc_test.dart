@@ -22,7 +22,7 @@ void main() {
   /// Makes [session] emit `expired` by failing a refresh.
   Future<void> expireSession() async {
     store.tokens = storedTokens;
-    gateway.onRefresh = (_) async => throw Exception('invalid_grant');
+    gateway.onRefresh = (_) async => throw const RefreshTokenRejected();
     await session.refresh();
   }
 

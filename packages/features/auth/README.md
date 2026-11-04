@@ -35,4 +35,5 @@ details are needed.
 - `AuthSignOutRequested`: end the session and clear the tokens.
 
 The bloc also signs the user out by itself when `AuthSession.expired` fires,
-which happens when a token refresh fails.
+which happens only when the provider rejects the refresh token. A refresh that
+fails because the device is offline keeps the user signed in.
