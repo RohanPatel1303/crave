@@ -180,6 +180,38 @@ void main() {
       expect(store.tokens, isNull);
     });
 
+    test(
+      'waits for an in-flight refresh so it cannot restore tokens',
+      () async {
+        store.tokens = _tokens('1');
+        final pending = Completer<TokenSet>();
+        gateway.onRefresh = (_) => pending.future;
+
+        final refreshing = session.refresh();
+        await Future<void>.delayed(Duration.zero);
+        final signingOut = session.signOut();
+        await Future<void>.delayed(Duration.zero);
+        pending.complete(_tokens('2'));
+        await refreshing;
+        await signingOut;
+
+        expect(store.tokens, isNull);
+        expect(gateway.endSessionCalls, ['id-2']);
+      },
+    );
+
+    test('still clears the store when stored tokens are unreadable', () async {
+      store.readError = const FormatException('Invalid token set.');
+
+      final refreshing = session.refresh();
+      final signingOut = session.signOut();
+      await refreshing;
+      await signingOut;
+
+      expect(store.clearCalls, 1);
+      expect(gateway.endSessionCalls, isEmpty);
+    });
+
     test('clears the store even when endSession throws', () async {
       store.tokens = _tokens('1');
       gateway.onEndSession = (_) async =>

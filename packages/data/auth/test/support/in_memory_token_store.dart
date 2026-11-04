@@ -5,9 +5,13 @@ final class InMemoryTokenStore implements TokenStore {
 
   TokenSet? tokens;
   int clearCalls = 0;
+  Exception? readError;
 
   @override
-  Future<TokenSet?> read() async => tokens;
+  Future<TokenSet?> read() async {
+    if (readError case final error?) throw error;
+    return tokens;
+  }
 
   @override
   Future<void> write(TokenSet tokens) async => this.tokens = tokens;

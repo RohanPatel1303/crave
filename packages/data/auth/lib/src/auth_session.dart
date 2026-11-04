@@ -75,10 +75,10 @@ final class AuthSession {
       _refreshing ??= _doRefresh().whenComplete(() => _refreshing = null);
 
   Future<String?> _doRefresh() async {
-    final tokens = await _store.read();
-    if (tokens == null) return null;
-
     try {
+      final tokens = await _store.read();
+      if (tokens == null) return null;
+
       final refreshed = await _gateway.refresh(tokens.refreshToken);
       await _store.write(refreshed);
       return refreshed.accessToken;
@@ -92,7 +92,12 @@ final class AuthSession {
   }
 
   /// Ends the provider session if possible, then always clears the tokens.
+  ///
+  /// Waits for any in-flight refresh first, so it can't write tokens back
+  /// after they are cleared.
   Future<void> signOut() async {
+    // Never throws: _doRefresh catches every error.
+    await _refreshing;
     try {
       final tokens = await _store.read();
       if (tokens != null) await _gateway.endSession(tokens.idToken);
