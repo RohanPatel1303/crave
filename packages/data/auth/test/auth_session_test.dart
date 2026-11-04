@@ -123,6 +123,19 @@ void main() {
       expect(gateway.refreshCalls, hasLength(1));
     });
 
+    test('passes the whole current token set to the gateway', () async {
+      store.tokens = _tokens('1');
+      TokenSet? received;
+      gateway.onRefresh = (current) async {
+        received = current;
+        return _tokens('2');
+      };
+
+      await session.refresh();
+
+      expect(received, _tokens('1'));
+    });
+
     test(
       'calls the gateway again once the previous refresh finished',
       () async {

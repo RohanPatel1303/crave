@@ -2,7 +2,7 @@ import 'package:auth/auth.dart';
 
 final class FakeIdentityGateway implements IdentityGateway {
   Future<TokenSet?> Function() onSignIn = () async => null;
-  Future<TokenSet> Function(String refreshToken) onRefresh = (_) =>
+  Future<TokenSet> Function(TokenSet current) onRefresh = (_) =>
       throw StateError('Unexpected refresh');
   Future<void> Function(String idToken) onEndSession = (_) async {};
 
@@ -17,9 +17,9 @@ final class FakeIdentityGateway implements IdentityGateway {
   }
 
   @override
-  Future<TokenSet> refresh(String refreshToken) {
-    refreshCalls.add(refreshToken);
-    return onRefresh(refreshToken);
+  Future<TokenSet> refresh(TokenSet current) {
+    refreshCalls.add(current.refreshToken);
+    return onRefresh(current);
   }
 
   @override
