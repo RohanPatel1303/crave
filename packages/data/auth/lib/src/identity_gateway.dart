@@ -7,12 +7,16 @@ abstract interface class IdentityGateway {
   /// Returns `null` when the user cancels, and throws on any other failure.
   Future<TokenSet?> signIn();
 
-  /// Exchanges [refreshToken] for a new token set.
+  /// Exchanges the refresh token in [current] for a new token set.
+  ///
+  /// OAuth lets the provider leave the refresh token or ID token out of the
+  /// response, meaning "keep the current one", so those fall back to the
+  /// values in [current].
   ///
   /// Throws [RefreshTokenRejected] only when the provider rejects the refresh
   /// token itself, meaning the session is over. Any other error, such as no
   /// network, is thrown as is and means the refresh can be tried again later.
-  Future<TokenSet> refresh(String refreshToken);
+  Future<TokenSet> refresh(TokenSet current);
 
   /// Ends the provider's session for the user identified by [idToken].
   Future<void> endSession(String idToken);

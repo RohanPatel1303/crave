@@ -48,6 +48,46 @@ void main() {
       expect(local.hashCode, tokens.hashCode);
     });
 
+    group('refreshedWith', () {
+      final newExpiry = DateTime.utc(2026, 11, 2, 12, 10);
+
+      test('uses every token the response includes', () {
+        final refreshed = tokens.refreshedWith(
+          accessToken: 'access-2',
+          accessTokenExpiresAt: newExpiry,
+          refreshToken: 'refresh-2',
+          idToken: 'id-2',
+        );
+
+        expect(
+          refreshed,
+          TokenSet(
+            accessToken: 'access-2',
+            refreshToken: 'refresh-2',
+            idToken: 'id-2',
+            accessTokenExpiresAt: newExpiry,
+          ),
+        );
+      });
+
+      test('keeps the current refresh and ID tokens when omitted', () {
+        final refreshed = tokens.refreshedWith(
+          accessToken: 'access-2',
+          accessTokenExpiresAt: newExpiry,
+        );
+
+        expect(
+          refreshed,
+          TokenSet(
+            accessToken: 'access-2',
+            refreshToken: 'refresh',
+            idToken: 'id',
+            accessTokenExpiresAt: newExpiry,
+          ),
+        );
+      });
+    });
+
     test('is not equal when any token differs', () {
       final other = TokenSet(
         accessToken: 'access',

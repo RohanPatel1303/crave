@@ -79,7 +79,7 @@ final class AuthSession {
       final tokens = await _store.read();
       if (tokens == null) return null;
 
-      final refreshed = await _gateway.refresh(tokens.refreshToken);
+      final refreshed = await _gateway.refresh(tokens);
       await _store.write(refreshed);
       return refreshed.accessToken;
     } on RefreshTokenRejected {

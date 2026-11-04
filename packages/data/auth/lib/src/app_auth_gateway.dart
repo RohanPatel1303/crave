@@ -39,26 +39,37 @@ final class AppAuthGateway implements IdentityGateway {
           allowInsecureConnections: _allowInsecureConnections,
         ),
       );
-      return _toTokenSet(response);
+      return _signedInTokenSet(response);
     } on FlutterAppAuthUserCancelledException {
       return null;
     }
   }
 
   @override
-  Future<TokenSet> refresh(String refreshToken) async {
+  Future<TokenSet> refresh(TokenSet current) async {
     try {
       final response = await _appAuth.token(
         TokenRequest(
           _clientId,
           _redirectUrl,
           issuer: _issuer.toString(),
-          refreshToken: refreshToken,
+          refreshToken: current.refreshToken,
           scopes: _scopes,
           allowInsecureConnections: _allowInsecureConnections,
         ),
       );
-      return _toTokenSet(response);
+      if (response case TokenResponse(
+        accessToken: final String accessToken,
+        accessTokenExpirationDateTime: final DateTime expiresAt,
+      )) {
+        return current.refreshedWith(
+          accessToken: accessToken,
+          accessTokenExpiresAt: expiresAt,
+          refreshToken: response.refreshToken,
+          idToken: response.idToken,
+        );
+      }
+      throw const FormatException('Incomplete token response.');
     } on FlutterAppAuthPlatformException catch (error) {
       // `error` is the provider's OAuth error code. Only invalid_grant means
       // the refresh token itself is dead; anything else, such as a network
@@ -83,7 +94,9 @@ final class AppAuthGateway implements IdentityGateway {
     );
   }
 
-  TokenSet _toTokenSet(TokenResponse response) {
+  /// A sign-in has no current tokens to fall back to, so every token must be
+  /// in the response.
+  TokenSet _signedInTokenSet(TokenResponse response) {
     if (response case TokenResponse(
       accessToken: final String accessToken,
       refreshToken: final String refreshToken,

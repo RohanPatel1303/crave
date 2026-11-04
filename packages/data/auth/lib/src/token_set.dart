@@ -48,6 +48,22 @@ final class TokenSet {
   /// When [accessToken] stops being accepted.
   final DateTime accessTokenExpiresAt;
 
+  /// Returns the token set after a refresh.
+  ///
+  /// A refresh response may leave out [refreshToken] or [idToken], which in
+  /// OAuth means "keep the current one", so those fall back to this set's.
+  TokenSet refreshedWith({
+    required String accessToken,
+    required DateTime accessTokenExpiresAt,
+    String? refreshToken,
+    String? idToken,
+  }) => TokenSet(
+    accessToken: accessToken,
+    refreshToken: refreshToken ?? this.refreshToken,
+    idToken: idToken ?? this.idToken,
+    accessTokenExpiresAt: accessTokenExpiresAt,
+  );
+
   /// Converts this token set to JSON for storage.
   Map<String, Object?> toJson() => {
     'accessToken': accessToken,
