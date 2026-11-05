@@ -1,10 +1,11 @@
 import 'package:auth/auth.dart';
+import 'package:auth/testing.dart';
 import 'package:auth_feature/auth_feature.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'support/fakes.dart';
+import 'support/tokens.dart';
 
 void main() {
   late FakeIdentityGateway gateway;
