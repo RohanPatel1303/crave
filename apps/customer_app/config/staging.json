@@ -1,4 +1,6 @@
 {
     "FLAVOR": "staging",
-    "API_BASE_URL": "https://api-staging.example.com"
+    "API_BASE_URL": "https://api-staging.example.com",
+    "OIDC_ISSUER": "https://localhost:8081/realms/crave",
+    "OIDC_REDIRECT_URI": "dev.crave.customer.staging:/oauthredirect"
 }

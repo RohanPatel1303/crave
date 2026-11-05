@@ -1,4 +1,6 @@
 {
-    "FLAVOR": "dev",
-    "API_BASE_URL": "http://10.0.2.2:8080"
+  "FLAVOR": "dev",
+  "API_BASE_URL": "http://localhost:8080",
+  "OIDC_ISSUER": "http://localhost:8081/realms/crave",
+  "OIDC_REDIRECT_URI": "dev.crave.customer.dev:/oauthredirect"
 }
