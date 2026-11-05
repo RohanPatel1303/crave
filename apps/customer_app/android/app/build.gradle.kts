@@ -20,15 +20,18 @@ android {
             dimension = "environment"
             applicationIdSuffix = ".dev"
             resValue("string", "app_name", "Crave Dev")
+            manifestPlaceholders["appAuthRedirectScheme"] = "dev.crave.customer.dev"
         }
         create("staging") {
             dimension = "environment"
             applicationIdSuffix = ".staging"
             resValue("string", "app_name", "Crave Staging")
+            manifestPlaceholders["appAuthRedirectScheme"] = "dev.crave.customer.staging"
         }
         create("prod") {
             dimension = "environment"
             resValue("string", "app_name", "Crave")
+            manifestPlaceholders["appAuthRedirectScheme"] = "dev.crave.customer.prod"
         }
     }
 
