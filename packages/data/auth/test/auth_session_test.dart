@@ -2,12 +2,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:auth/auth.dart';
+import 'package:auth/testing.dart';
 import 'package:core/core.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'support/fake_identity_gateway.dart';
-import 'support/in_memory_token_store.dart';
 
 final _now = DateTime.utc(2026, 11, 2, 12);
 
