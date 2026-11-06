@@ -5,6 +5,7 @@
 - Run `dart run melos run deps:check` after dependency or package-structure changes.
 - Repositories return `Result<T>` for expected failures; never throw expected failures.
 - Use constructor injection for dependencies everywhere except the composition root.
+- Only `apps/customer_app/lib/app/di.dart` touches `get_it`; widgets get their dependencies through constructors.
 - Build UI with design-system components and tokens; avoid raw spacing numbers and color values.
 - Server errors use the documented JSON envelope in `docs/api.md`.
 - Read server configuration through `loadConfig`; do not read environment variables directly elsewhere.
