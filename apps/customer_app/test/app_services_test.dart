@@ -1,25 +1,60 @@
+import 'package:api_client/api_client.dart';
+import 'package:auth/auth.dart';
+import 'package:auth_feature/auth_feature.dart';
 import 'package:core/core.dart';
 import 'package:customer_app/app/app_bloc_observer.dart';
 import 'package:customer_app/app/di.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'support/test_config.dart';
 
 void main() {
   setUp(resetDependencies);
   tearDown(resetDependencies);
 
   group('configureDependencies', () {
-    test('registers config and logger singletons', () async {
-      final config = AppConfig.parse(
-        flavor: Flavor.dev,
-        apiBaseUrl: 'https://api.example.com',
-      );
-      final logger = ConsoleLogger(minLevel: LogLevel.debug, sink: (_) {});
+    final config = testConfig(Flavor.dev);
+    final logger = ConsoleLogger(minLevel: LogLevel.debug, sink: (_) {});
 
+    // SecureTokenStore needs the platform plugin; this swaps in its
+    // in-memory test implementation, with no stored session.
+    setUp(() => FlutterSecureStorage.setMockInitialValues({}));
+
+    test('registers config and logger singletons', () async {
       await configureDependencies(config: config, logger: logger);
 
       expect(getIt<AppConfig>(), same(config));
       expect(getIt<AppLogger>(), same(logger));
+    });
+
+    test('registers the session, API client and auth bloc', () async {
+      await configureDependencies(config: config, logger: logger);
+
+      expect(getIt.isRegistered<AuthSession>(), isTrue);
+      expect(getIt.isRegistered<ApiClient>(), isTrue);
+      expect(getIt.isRegistered<AuthBloc>(), isTrue);
+    });
+
+    test('starts the auth bloc, which finds no stored session', () async {
+      await configureDependencies(config: config, logger: logger);
+      final bloc = getIt<AuthBloc>();
+
+      final state = bloc.state is AuthUnknown
+          ? await bloc.stream.first
+          : bloc.state;
+
+      expect(state, isA<Unauthenticated>());
+    });
+
+    test('resetting closes the auth bloc', () async {
+      await configureDependencies(config: config, logger: logger);
+      final bloc = getIt<AuthBloc>();
+
+      await resetDependencies();
+
+      expect(bloc.isClosed, isTrue);
     });
   });
 

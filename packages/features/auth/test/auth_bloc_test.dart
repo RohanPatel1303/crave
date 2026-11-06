@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auth/auth.dart';
 import 'package:auth/testing.dart';
 import 'package:auth_feature/auth_feature.dart';
@@ -84,6 +86,23 @@ void main() {
         ),
       ],
     );
+  });
+
+  test('a sign-in requested while one is running is dropped', () async {
+    final pending = Completer<TokenSet?>();
+    gateway.onSignIn = () => pending.future;
+    final bloc = AuthBloc(session: session);
+    addTearDown(bloc.close);
+
+    bloc
+      ..add(const AuthSignInRequested())
+      ..add(const AuthSignInRequested());
+    await Future<void>.delayed(Duration.zero);
+    pending.complete(storedTokens);
+    await bloc.stream.first;
+
+    expect(gateway.signInCalls, 1);
+    expect(bloc.state, isA<Authenticated>());
   });
 
   blocTest<AuthBloc, AuthState>(

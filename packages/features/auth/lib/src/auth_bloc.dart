@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:auth/auth.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:core/core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -15,7 +16,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     : _session = session,
       super(const AuthUnknown()) {
     on<AuthStarted>(_onStarted);
-    on<AuthSignInRequested>(_onSignInRequested);
+    // A second tap while the sign-in page is open must not start another one.
+    on<AuthSignInRequested>(_onSignInRequested, transformer: droppable());
     on<AuthSignOutRequested>(_onSignOutRequested);
     on<_AuthSessionExpired>(_onSessionExpired);
 

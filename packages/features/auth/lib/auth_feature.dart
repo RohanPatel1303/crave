@@ -9,3 +9,4 @@ export 'src/auth_bloc.dart'
         AuthUnknown,
         Authenticated,
         Unauthenticated;
+export 'src/sign_in_page.dart' show SignInPage;

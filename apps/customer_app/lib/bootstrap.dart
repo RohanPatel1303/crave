@@ -1,9 +1,12 @@
 import 'dart:ui';
 
+import 'package:api_client/api_client.dart';
+import 'package:auth_feature/auth_feature.dart';
 import 'package:core/core.dart';
 import 'package:customer_app/app/app.dart';
 import 'package:customer_app/app/app_bloc_observer.dart';
 import 'package:customer_app/app/di.dart';
+import 'package:customer_app/app/router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -54,5 +57,12 @@ Future<void> bootstrap() async {
   installErrorHandlers(logger);
   Bloc.observer = AppBlocObserver(logger);
   await configureDependencies(config: config, logger: logger);
-  runApp(const CraveApp());
+  final authBloc = getIt<AuthBloc>();
+  runApp(
+    CraveApp(
+      config: config,
+      authBloc: authBloc,
+      router: createRouter(authBloc: authBloc, apiClient: getIt<ApiClient>()),
+    ),
+  );
 }

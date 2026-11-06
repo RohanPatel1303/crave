@@ -1,56 +1,160 @@
+import 'dart:async';
+
+import 'package:api_client/testing.dart';
+import 'package:auth/auth.dart';
+import 'package:auth/testing.dart';
+import 'package:auth_feature/auth_feature.dart';
 import 'package:core/core.dart';
 import 'package:customer_app/app/app.dart';
-import 'package:customer_app/app/di.dart';
 import 'package:customer_app/app/router.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/test_config.dart';
+
+final _tokens = TokenSet(
+  accessToken: 'access',
+  refreshToken: 'refresh',
+  idToken: 'id',
+  accessTokenExpiresAt: DateTime.utc(2100),
+);
+
 void main() {
-  Future<void> registerConfigWithFlavor(Flavor flavor) async {
-    await resetDependencies();
-    getIt.registerSingleton<AppConfig>(
-      AppConfig.parse(flavor: flavor, apiBaseUrl: 'https://api.example.com'),
+  late FakeIdentityGateway gateway;
+  late InMemoryTokenStore store;
+  late FakeApiServer server;
+  late AuthBloc authBloc;
+
+  setUp(() {
+    gateway = FakeIdentityGateway();
+    store = InMemoryTokenStore();
+    server = FakeApiServer(
+      (_, _) => const FakeResponse(200, {'id': 'u1', 'email': 'ada@x.test'}),
     );
+  });
+
+  // Built in the test body so the bloc's async work runs in the widget
+  // test's fake-async zone.
+  Future<void> pumpApp(
+    WidgetTester tester, {
+    Flavor flavor = Flavor.staging,
+    String initialLocation = Routes.home,
+    bool start = true,
+  }) async {
+    final session = AuthSession(gateway: gateway, store: store);
+    authBloc = AuthBloc(session: session);
+    if (start) authBloc.add(const AuthStarted());
+    final router = createRouter(
+      authBloc: authBloc,
+      apiClient: server.client,
+      initialLocation: initialLocation,
+    );
+    // Teardown runs after the fake-async zone stops being pumped, so awaiting
+    // close here would hang. Start it and let it finish on its own.
+    addTearDown(() {
+      router.dispose();
+      unawaited(authBloc.close());
+      unawaited(session.dispose());
+    });
+    await tester.pumpWidget(
+      CraveApp(config: testConfig(flavor), authBloc: authBloc, router: router),
+    );
+    // A spinner never settles, so the not-started case pumps one frame.
+    if (start) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+    }
   }
 
-  setUp(() => registerConfigWithFlavor(Flavor.staging));
-
-  testWidgets('shows the home page and a non-production flavor banner', (
+  testWidgets('shows a non-production flavor banner and the app theme', (
     tester,
   ) async {
-    await tester.pumpWidget(const CraveApp());
+    await pumpApp(tester);
 
-    expect(find.text('What are you craving?'), findsOneWidget);
-    expect(
-      find.text('Discover something delicious, made just for you.'),
-      findsOneWidget,
-    );
-    expect(find.text('Start an order'), findsOneWidget);
     expect(
       tester.widget<Banner>(find.byType(Banner)).message,
       Flavor.staging.name,
     );
-
     final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(materialApp.title, 'Crave staging');
     expect(materialApp.theme, AppTheme.light);
     expect(materialApp.darkTheme, AppTheme.dark);
   });
 
   testWidgets('does not show a flavor banner in production', (tester) async {
-    await registerConfigWithFlavor(Flavor.prod);
-
-    await tester.pumpWidget(const CraveApp());
+    await pumpApp(tester, flavor: Flavor.prod);
 
     expect(find.byType(Banner), findsNothing);
     expect(tester.widget<MaterialApp>(find.byType(MaterialApp)).title, 'Crave');
   });
 
+  testWidgets('shows a spinner until the stored session is checked', (
+    tester,
+  ) async {
+    await pumpApp(tester, start: false);
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.text('Sign in'), findsNothing);
+    expect(server.requests, isEmpty);
+  });
+
+  testWidgets('without a session, shows the sign-in page', (tester) async {
+    await pumpApp(tester);
+
+    expect(find.text('Sign in'), findsOneWidget);
+    expect(server.requests, isEmpty);
+  });
+
+  testWidgets('with a stored session, shows home with the user', (
+    tester,
+  ) async {
+    store.tokens = _tokens;
+    await pumpApp(tester);
+
+    expect(find.text('What are you craving?'), findsOneWidget);
+    expect(find.text('ada@x.test'), findsOneWidget);
+  });
+
+  testWidgets('signing in goes home, and signing out returns to sign-in', (
+    tester,
+  ) async {
+    gateway.onSignIn = () async => _tokens;
+    await pumpApp(tester);
+
+    await tester.tap(find.text('Sign in'));
+    await tester.pumpAndSettle();
+    expect(find.text('ada@x.test'), findsOneWidget);
+
+    await tester.tap(find.text('Sign out'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sign in'), findsOneWidget);
+  });
+
   testWidgets('shows a not-found page for an unknown location', (tester) async {
-    await tester.pumpWidget(
-      CraveApp(router: createRouter(initialLocation: '/missing')),
-    );
+    store.tokens = _tokens;
+    await pumpApp(tester, initialLocation: '/missing');
 
     expect(find.text('Page not found'), findsOneWidget);
+  });
+
+  group('redirectFor', () {
+    test('sends everything to loading until the session is known', () {
+      expect(redirectFor(const AuthUnknown(), Routes.home), Routes.loading);
+      expect(redirectFor(const AuthUnknown(), Routes.loading), isNull);
+    });
+
+    test('sends everything to sign-in when signed out', () {
+      expect(redirectFor(const Unauthenticated(), Routes.home), Routes.signIn);
+      expect(redirectFor(const Unauthenticated(), Routes.signIn), isNull);
+    });
+
+    test('sends loading and sign-in home when signed in', () {
+      expect(redirectFor(const Authenticated(), Routes.signIn), Routes.home);
+      expect(redirectFor(const Authenticated(), Routes.loading), Routes.home);
+      expect(redirectFor(const Authenticated(), Routes.home), isNull);
+      expect(redirectFor(const Authenticated(), '/missing'), isNull);
+    });
   });
 }
