@@ -9,7 +9,7 @@ workspace's quality gates.
 ## Repository layout
 
 ```text
-apps/       Runnable Flutter applications (customer app is planned)
+apps/       Runnable Flutter applications (customer_app)
 packages/   Shared Dart and Flutter packages
 tool/       Repository checks and development utilities
 docs/adr/   Accepted architecture decision records
@@ -57,17 +57,7 @@ dart pub global activate melos
 fvm flutter pub get
 ```
 
-Run the customer app's `dev` flavor from its directory. This command works in
-both macOS Terminal and Windows PowerShell:
-
-```text
-cd apps/customer_app
-fvm flutter run --flavor dev --dart-define-from-file=config/dev.json
-```
-
-The command documents the intended launch configuration. The customer app's
-Flutter manifest, Dart entrypoint, and `config/dev.json` are not yet tracked in
-this repository, so the app cannot currently be launched from this checkout.
+To run the customer app, see [Run the app locally](#run-the-app-locally).
 
 ## Server
 
@@ -248,6 +238,45 @@ with `"code": "UNAUTHORIZED"`.
 Run the server tests and coverage gate with `npm test` from `server/`. This
 command works in both macOS Terminal and Windows PowerShell. Other checks are
 available with `npm run lint`, `npm run format:check`, and `npm run typecheck`.
+
+## Run the app locally
+
+The customer app's `dev` flavor signs in through the local Keycloak and calls
+the local API, so start both first. These steps are for Android; the iOS
+project does not define flavors yet.
+
+1. Start [Keycloak](#keycloak) and the [API](#api).
+2. Start an Android emulator, or connect a phone over USB.
+3. Forward the device's ports to your computer. On the device, `localhost`
+   means the device itself; `adb reverse` makes its `localhost:8080` (API) and
+   `localhost:8081` (Keycloak) reach your computer instead. The
+   [customer app README](apps/customer_app/README.md#why-dev-uses-localhost-and-adb-reverse)
+   explains why the app uses `localhost` rather than `10.0.2.2`.
+
+   ```text
+   adb reverse tcp:8080 tcp:8080
+   adb reverse tcp:8081 tcp:8081
+   ```
+
+   The forwarding is lost when the emulator restarts, so run these again
+   after each restart. `adb` lives in the Android SDK's `platform-tools`
+   folder: `~/Library/Android/sdk/platform-tools` on macOS and
+   `%LOCALAPPDATA%\Android\Sdk\platform-tools` on Windows. Add that folder to
+   your `PATH` if the command is not found.
+
+4. Run the app. This command works in both macOS Terminal and Windows
+   PowerShell:
+
+   ```text
+   cd apps/customer_app
+   fvm flutter run --flavor dev --dart-define-from-file=config/dev.json
+   ```
+
+5. Tap **Sign in** and sign in as `demo@crave.dev`, the demo user from
+   [Local sign-in](#local-sign-in). The app returns to its home page and shows
+   the user's email address.
+
+![Signing in on the Android emulator: the app opens the Keycloak sign-in page, returns to the home page showing demo@crave.dev, and the Keycloak admin console lists the new session](docs/media/sign-in-demo.gif)
 
 ## Quality gates
 
