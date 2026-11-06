@@ -8,14 +8,14 @@ import 'package:go_router/go_router.dart';
 
 abstract final class Routes {
   static const home = '/';
-  static const loading = '/loading';
+  static const splash = '/splash';
   static const signIn = '/sign-in';
 }
 
 /// Builds the app's router.
 ///
 /// Every navigation, and every [authBloc] state change, is redirected to
-/// match the auth state: [Routes.loading] until the stored session has been
+/// match the auth state: [Routes.splash] until the stored session has been
 /// checked, [Routes.signIn] when signed out, and away from both once signed
 /// in.
 GoRouter createRouter({
@@ -26,14 +26,14 @@ GoRouter createRouter({
   initialLocation: initialLocation,
   refreshListenable: _StreamListenable(authBloc.stream),
   redirect: (context, state) =>
-      redirectFor(authBloc.state, state.matchedLocation),
+      authRedirect(authBloc.state, state.matchedLocation),
   routes: [
     GoRoute(
       path: Routes.home,
       builder: (context, state) => HomePage(apiClient: apiClient),
     ),
     GoRoute(
-      path: Routes.loading,
+      path: Routes.splash,
       builder: (context, state) =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
     ),
@@ -46,17 +46,15 @@ GoRouter createRouter({
       const Scaffold(body: Center(child: Text('Page not found'))),
 );
 
-/// Where [location] should go for the auth [state], or `null` to stay.
-String? redirectFor(AuthState state, String location) => switch (state) {
-  AuthUnknown() => location == Routes.loading ? null : Routes.loading,
+/// Where [location] should go for the auth state [auth], or `null` to stay.
+String? authRedirect(AuthState auth, String location) => switch (auth) {
+  AuthUnknown() => location == Routes.splash ? null : Routes.splash,
   Unauthenticated() => location == Routes.signIn ? null : Routes.signIn,
   Authenticated() =>
-    location == Routes.loading || location == Routes.signIn
-        ? Routes.home
-        : null,
+    location == Routes.signIn || location == Routes.splash ? Routes.home : null,
 };
 
-/// Notifies listeners on every event of a stream.
+/// Notifies listeners on each state of a bloc.
 ///
 /// The subscription ends when the stream does, which for a bloc's stream is
 /// when the bloc closes.
