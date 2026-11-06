@@ -100,19 +100,17 @@ void main() {
     expect(server.requests, isEmpty);
   });
 
-  testWidgets('without a session, shows the sign-in page', (tester) async {
-    await pumpApp(tester);
+  testWidgets('follows the auth state from sign-in to home', (tester) async {
+    await pumpApp(tester, start: false);
 
+    authBloc.emit(const Unauthenticated());
+    await tester.pumpAndSettle();
     expect(find.text('Sign in'), findsOneWidget);
-    expect(server.requests, isEmpty);
-  });
+    expect(find.text('What are you craving?'), findsNothing);
 
-  testWidgets('with a stored session, shows home with the user', (
-    tester,
-  ) async {
-    store.tokens = _tokens;
-    await pumpApp(tester);
-
+    authBloc.emit(const Authenticated());
+    await tester.pumpAndSettle();
+    expect(find.text('Sign in'), findsNothing);
     expect(find.text('What are you craving?'), findsOneWidget);
     expect(find.text('ada@x.test'), findsOneWidget);
   });
@@ -139,22 +137,24 @@ void main() {
     expect(find.text('Page not found'), findsOneWidget);
   });
 
-  group('redirectFor', () {
-    test('sends everything to loading until the session is known', () {
-      expect(redirectFor(const AuthUnknown(), Routes.home), Routes.loading);
-      expect(redirectFor(const AuthUnknown(), Routes.loading), isNull);
-    });
+  group('authRedirect', () {
+    const cases = <(AuthState, String, String?)>[
+      (AuthUnknown(), Routes.splash, null),
+      (AuthUnknown(), Routes.signIn, Routes.splash),
+      (AuthUnknown(), Routes.home, Routes.splash),
+      (Unauthenticated(), Routes.splash, Routes.signIn),
+      (Unauthenticated(), Routes.signIn, null),
+      (Unauthenticated(), Routes.home, Routes.signIn),
+      (Authenticated(), Routes.splash, Routes.home),
+      (Authenticated(), Routes.signIn, Routes.home),
+      (Authenticated(), Routes.home, null),
+    ];
 
-    test('sends everything to sign-in when signed out', () {
-      expect(redirectFor(const Unauthenticated(), Routes.home), Routes.signIn);
-      expect(redirectFor(const Unauthenticated(), Routes.signIn), isNull);
-    });
-
-    test('sends loading and sign-in home when signed in', () {
-      expect(redirectFor(const Authenticated(), Routes.signIn), Routes.home);
-      expect(redirectFor(const Authenticated(), Routes.loading), Routes.home);
-      expect(redirectFor(const Authenticated(), Routes.home), isNull);
-      expect(redirectFor(const Authenticated(), '/missing'), isNull);
-    });
+    for (final (auth, location, expected) in cases) {
+      test('${auth.runtimeType} at $location '
+          '${expected == null ? 'stays' : 'goes to $expected'}', () {
+        expect(authRedirect(auth, location), expected);
+      });
+    }
   });
 }
