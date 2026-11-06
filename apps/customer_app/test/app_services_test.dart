@@ -48,6 +48,15 @@ void main() {
       expect(state, isA<Unauthenticated>());
     });
 
+    test('createApp builds the app from the registered dependencies', () async {
+      await configureDependencies(config: config, logger: logger);
+
+      final app = createApp();
+
+      expect(app.config, same(config));
+      expect(app.authBloc, same(getIt<AuthBloc>()));
+    });
+
     test('resetting closes the auth bloc', () async {
       await configureDependencies(config: config, logger: logger);
       final bloc = getIt<AuthBloc>();
