@@ -242,14 +242,18 @@ available with `npm run lint`, `npm run format:check`, and `npm run typecheck`.
 ## Run the app locally
 
 The customer app's `dev` flavor signs in through the local Keycloak and calls
-the local API, so start both first. These steps are for Android; the iOS
-project does not define flavors yet.
+the local API, so start both first. You can run it on Android (an emulator or
+a phone connected over USB) or on an iOS simulator. iOS builds need macOS with
+Xcode.
 
 1. Start [Keycloak](#keycloak) and the [API](#api).
-2. Start an Android emulator, or connect a phone over USB.
-3. Forward the device's ports to your computer. On the device, `localhost`
-   means the device itself; `adb reverse` makes its `localhost:8080` (API) and
-   `localhost:8081` (Keycloak) reach your computer instead. The
+2. Start a device and make the computer's `localhost` reachable from it. The
+   app's `dev` configuration calls `localhost:8080` (API) and `localhost:8081`
+   (Keycloak), and those must reach your computer.
+
+   **Android:** start an emulator, or connect a phone over USB. On the device,
+   `localhost` means the device itself; `adb reverse` makes its
+   `localhost:8080` and `localhost:8081` reach your computer instead. The
    [customer app README](apps/customer_app/README.md#why-dev-uses-localhost-and-adb-reverse)
    explains why the app uses `localhost` rather than `10.0.2.2`.
 
@@ -264,15 +268,25 @@ project does not define flavors yet.
    `%LOCALAPPDATA%\Android\Sdk\platform-tools` on Windows. Add that folder to
    your `PATH` if the command is not found.
 
-4. Run the app. This command works in both macOS Terminal and Windows
-   PowerShell:
+   **iOS:** start a simulator with `open -a Simulator`. The simulator shares
+   your Mac's network, so its `localhost` is already your Mac and no
+   forwarding is needed. A physical iPhone cannot reach your Mac's
+   `localhost`, so use the simulator for `dev`.
+
+3. Run the app. On Android this command works in both macOS Terminal and
+   Windows PowerShell; on iOS, run it in macOS Terminal. If more than one
+   device is running, add `-d <device id>` from `fvm flutter devices`.
 
    ```text
    cd apps/customer_app
    fvm flutter run --flavor dev --dart-define-from-file=config/dev.json
    ```
 
-5. Tap **Sign in** and sign in as `demo@crave.dev`, the demo user from
+   `--flavor dev` selects the Android `dev` flavor or the iOS `dev` scheme.
+   The app stops at launch if `--flavor` is missing or does not match
+   `FLAVOR` in the config file.
+
+4. Tap **Sign in** and sign in as `demo@crave.dev`, the demo user from
    [Local sign-in](#local-sign-in). The app returns to its home page and shows
    the user's email address.
 
@@ -302,7 +316,15 @@ override it.
   dependency-layer checks, and CI.
 - [x] **Phase 2 — Shared foundations:** core result/error/configuration
   primitives and reusable design-system components.
-- [ ] **Phase 3 — Customer app MVP:** tracked app scaffold, dev flavor
-  configuration, and food-discovery experience.
+- [ ] **Phase 3 — Customer app MVP:**
+  - [x] App scaffold: bootstrap with a flavor check and global error
+    handling, router, app shell and home page.
+  - [x] Networking: `ApiClient` with auth headers, request IDs, safe logging,
+    HTTP error mapping, and refresh-and-retry once on `401`.
+  - [x] Sign-in: Keycloak sign-in through AppAuth, secure token storage,
+    single-flight refresh, `AuthBloc`, and redirects by sign-in state; the
+    API verifies access tokens and serves `/me`.
+  - [x] Flavors: `dev`, `staging` and `prod` on Android and iOS.
+  - [ ] Food-discovery experience.
 - [ ] **Phase 4 — Product expansion:** staff-facing application and
   production-readiness work.
