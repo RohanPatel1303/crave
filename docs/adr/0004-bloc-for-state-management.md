@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-18
+- Amended: 2026-11-10 (see [Amendments](#amendments))
 
 ## Context
 
@@ -42,4 +43,18 @@ updates must produce predictable UI states.
   only the default Runner scheme and configurations; it does not yet map
   native schemes to those flavors. The iOS bootstrap permits a missing native
   flavor, so Dart-side configuration can still be supplied, but native
-  flavor-specific build configuration remains a known gap.
+  flavor-specific build configuration remains a known gap. (Closed; see
+  [Amendments](#amendments).)
+
+## Amendments
+
+### 2026-11-10: iOS defines native flavors; a missing flavor is rejected
+
+iOS now has `dev`, `staging`, and `prod` schemes, each with Debug, Profile,
+and Release build configurations. Each configuration includes a per-flavor
+xcconfig that sets the bundle identifier, display name, and AppAuth redirect
+scheme to match the Android flavor and its `config/<flavor>.json`.
+
+Both platforms now set a native flavor, so `ensureFlavorsMatch` no longer
+allows a null one. A build without `--flavor` throws a `StateError` at launch,
+as a mismatched flavor already did.
