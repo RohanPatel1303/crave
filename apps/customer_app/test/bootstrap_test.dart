@@ -22,10 +22,16 @@ void main() {
   });
 
   group('ensureFlavorsMatch', () {
-    test('allows a null native flavor', () {
+    test('throws when the native flavor is missing', () {
       expect(
         () => ensureFlavorsMatch(configFlavor: Flavor.dev, nativeFlavor: null),
-        returnsNormally,
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            contains('dev'),
+          ),
+        ),
       );
     });
 

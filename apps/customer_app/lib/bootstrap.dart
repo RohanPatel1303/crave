@@ -7,15 +7,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Throws [StateError] when the native flavor and the FLAVOR define disagree.
+/// Throws [StateError] when the native flavor is missing or disagrees with
+/// the FLAVOR define.
 ///
-/// A null [nativeFlavor] is allowed because iOS does not yet define a native
-/// flavor.
+/// Android and iOS both define native flavors, so a null [nativeFlavor] means
+/// the app was built without `--flavor` and is rejected.
 void ensureFlavorsMatch({
   required Flavor configFlavor,
   required String? nativeFlavor,
 }) {
-  if (nativeFlavor != null && nativeFlavor != configFlavor.name) {
+  if (nativeFlavor == null) {
+    throw StateError(
+      'No native flavor is set; build with --flavor ${configFlavor.name}.',
+    );
+  }
+  if (nativeFlavor != configFlavor.name) {
     throw StateError(
       'Native flavor "$nativeFlavor" does not match '
       'FLAVOR "${configFlavor.name}".',
