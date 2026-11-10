@@ -1,0 +1,5 @@
+// dev.xcconfig
+// Must match the Android "dev" flavor and config/dev.json.
+PRODUCT_BUNDLE_IDENTIFIER = dev.crave.customerApp.dev
+APP_DISPLAY_NAME = Crave Dev
+APP_AUTH_REDIRECT_SCHEME = dev.crave.customer.dev

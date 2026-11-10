@@ -1,0 +1,5 @@
+// staging.xcconfig
+// Must match the Android "staging" flavor and config/staging.json.
+PRODUCT_BUNDLE_IDENTIFIER = dev.crave.customerApp.staging
+APP_DISPLAY_NAME = Crave Staging
+APP_AUTH_REDIRECT_SCHEME = dev.crave.customer.staging
