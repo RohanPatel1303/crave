@@ -65,9 +65,39 @@ void main() {
     });
   });
 
+  // Values are built at runtime on purpose. Two `const` results with the same
+  // value are canonicalized into one instance, so `identical` short-circuits
+  // `==` and the test would pass whatever `==` compares.
   group('Result equality', () {
     test('two Ok values with equal values are equal', () {
-      expect(const Result<int>.ok(2), const Result<int>.ok(2));
+      final two = int.parse('2');
+      final first = Result<int>.ok(two);
+      final second = Result<int>.ok(int.parse('2'));
+
+      expect(identical(first, second), isFalse);
+      expect(first, second);
+    });
+
+    test('two Ok values with different values are not equal', () {
+      final two = Result<int>.ok(int.parse('2'));
+      final three = Result<int>.ok(int.parse('3'));
+
+      expect(two, isNot(three));
+    });
+
+    test('an Ok never equals an Err', () {
+      final ok = Result<int>.ok(int.parse('500'));
+      final err = Result<int>.err(ServerFailure(statusCode: int.parse('500')));
+
+      expect(ok, isNot(err));
+      expect(err, isNot(ok));
+    });
+
+    test('two Ok values with equal values share a hashCode', () {
+      final first = Result<int>.ok(int.parse('2'));
+      final second = Result<int>.ok(int.parse('2'));
+
+      expect(first.hashCode, second.hashCode);
     });
   });
 
