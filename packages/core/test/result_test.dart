@@ -127,13 +127,31 @@ void main() {
       expect(result.failureOrNull, same(failure));
     });
 
-    test('falls back to UnexpectedFailure when onError returns null or '
-        'is not given', () {
-      final result = Result.guard(() => throw StateError('bad state'));
+    test('falls back to UnexpectedFailure when onError is not given', () {
+      final error = StateError('bad state');
+      final result = Result.guard<int>(() => throw error);
 
       expect(result.failureOrNull, isA<UnexpectedFailure>());
       final unexpectedFailure = result.failureOrNull!;
-      expect(unexpectedFailure.cause, isA<StateError>());
+      expect(unexpectedFailure.cause, same(error));
+      expect(unexpectedFailure.stackTrace, isNotNull);
+    });
+
+    test('falls back to UnexpectedFailure when onError returns null', () {
+      final error = StateError('bad state');
+      Object? seenError;
+      final result = Result.guard<int>(
+        () => throw error,
+        onError: (error, stackTrace) {
+          seenError = error;
+          return null;
+        },
+      );
+
+      expect(seenError, same(error));
+      expect(result.failureOrNull, isA<UnexpectedFailure>());
+      final unexpectedFailure = result.failureOrNull!;
+      expect(unexpectedFailure.cause, same(error));
       expect(unexpectedFailure.stackTrace, isNotNull);
     });
 
