@@ -37,6 +37,14 @@ final class ServerFailure extends AppFailure {
   }) : super(message, cause: cause, stackTrace: stackTrace);
 
   /// The HTTP status code returned by the server.
+  ///
+  /// `ApiClient` sets one of:
+  /// - Any status outside 200–299 except 400, 401, 403 and 409, from a
+  ///   response with no recognized error code: for example 404, 429, 500,
+  ///   503, or a redirect that Dio did not follow.
+  /// - The response's status, whatever it is, when its error code is
+  ///   `NOT_FOUND` or `INTERNAL`. The Crave API sends those codes only with
+  ///   404 and 500.
   final int statusCode;
 }
 
@@ -51,6 +59,14 @@ final class UnauthorizedFailure extends AppFailure {
   }) : super(message, cause: cause, stackTrace: stackTrace);
 
   /// The HTTP status code associated with the failure.
+  ///
+  /// `ApiClient` sets one of:
+  /// - 401 or 403, from a response with that status and no recognized error
+  ///   code.
+  /// - The response's status, whatever it is, when its error code is
+  ///   `UNAUTHORIZED`. The Crave API sends that code only with 401.
+  /// - The default 401 when no access token is available, in which case no
+  ///   request was sent.
   final int statusCode;
 }
 
@@ -79,6 +95,11 @@ final class ConflictFailure extends AppFailure {
   }) : super(message, cause: cause, stackTrace: stackTrace);
 
   /// The HTTP status code associated with the failure.
+  ///
+  /// `ApiClient` sets one of:
+  /// - 409, from a response with that status and no recognized error code.
+  /// - The response's status, whatever it is, when its error code is
+  ///   `CONFLICT`. The Crave API sends that code only with 409.
   final int statusCode;
 }
 
