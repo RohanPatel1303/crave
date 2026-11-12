@@ -41,8 +41,24 @@ leaking raw exceptions upward.
 
 ## Decision
 We choose option 3: expected failures are represented as values using a small
-sealed `Result<T>` plus a set of concrete `AppFailure` classes. Exceptions remain
-reserved for truly exceptional runtime conditions.
+sealed `Result<T>` plus a set of concrete `AppFailure` classes.
+
+To decide whether a failure is a value or a thrown exception, ask whether a
+correct program could still run into it:
+
+- **Return a failure value** when it can happen even though our code is
+  correct, because it depends on the network, the server, the user or time.
+  The caller should expect it and decide what to do. Examples: the device is
+  offline, the server answers with a 4xx, the user enters invalid input, or
+  the session has expired.
+- **Throw** when running into it means our code is wrong: a bug or a broken
+  invariant that no caller can recover from at runtime, because the only fix
+  is to change the code. Example: adding an amount in dollars to an amount in
+  euros.
+
+Our own code returns expected failures instead of throwing them. `guard` and
+`guardAsync` exist to convert what other code throws, such as a third-party
+library, into `AppFailure` values at that boundary.
 
 `guard` catches thrown `Object` values from the synchronous body and converts
 them into `Result.err(...)`. It asserts that the body's returned value is not a
