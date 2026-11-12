@@ -1,7 +1,6 @@
-import 'dart:async';
-
 import 'package:api_client/api_client.dart';
 import 'package:auth_feature/auth_feature.dart';
+import 'package:customer_app/app/stream_listenable.dart';
 import 'package:customer_app/features/home/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -24,7 +23,7 @@ GoRouter createRouter({
   String initialLocation = Routes.home,
 }) => GoRouter(
   initialLocation: initialLocation,
-  refreshListenable: _StreamListenable(authBloc.stream),
+  refreshListenable: StreamListenable(authBloc.stream),
   redirect: (context, state) =>
       authRedirect(authBloc.state, state.matchedLocation),
   routes: [
@@ -53,21 +52,3 @@ String? authRedirect(AuthState auth, String location) => switch (auth) {
   Authenticated() =>
     location == Routes.signIn || location == Routes.splash ? Routes.home : null,
 };
-
-/// Notifies listeners on each state of a bloc.
-///
-/// The subscription ends when the stream does, which for a bloc's stream is
-/// when the bloc closes.
-final class _StreamListenable extends ChangeNotifier {
-  _StreamListenable(Stream<Object?> stream) {
-    _subscription = stream.listen((_) => notifyListeners());
-  }
-
-  late final StreamSubscription<Object?> _subscription;
-
-  @override
-  void dispose() {
-    unawaited(_subscription.cancel());
-    super.dispose();
-  }
-}
