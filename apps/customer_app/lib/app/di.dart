@@ -4,7 +4,9 @@ import 'package:auth_feature/auth_feature.dart';
 import 'package:core/core.dart';
 import 'package:customer_app/app/app.dart';
 import 'package:customer_app/app/router.dart';
+import 'package:customer_app/app/stream_listenable.dart';
 import 'package:get_it/get_it.dart';
+import 'package:go_router/go_router.dart';
 
 /// The service locator. Only this file reads it; everything else gets its
 /// dependencies through constructors.
@@ -24,7 +26,8 @@ Future<void> configureDependencies({
     store: const SecureTokenStore(),
   );
 
-  // GetIt disposes in reverse order, so the bloc closes before the session.
+  // GetIt disposes in reverse order: the router, then the listenable that
+  // refreshes it, then the bloc that feeds the listenable, then the session.
   getIt
     ..registerSingleton<AppConfig>(config)
     ..registerSingleton<AppLogger>(logger)
@@ -43,18 +46,27 @@ Future<void> configureDependencies({
     ..registerSingleton<AuthBloc>(
       AuthBloc(session: session)..add(const AuthStarted()),
       dispose: (bloc) => bloc.close(),
+    )
+    ..registerSingleton<StreamListenable>(
+      StreamListenable(getIt<AuthBloc>().stream),
+      dispose: (listenable) => listenable.dispose(),
+    )
+    ..registerSingleton<GoRouter>(
+      createRouter(
+        authBloc: getIt<AuthBloc>(),
+        apiClient: getIt<ApiClient>(),
+        refreshListenable: getIt<StreamListenable>(),
+      ),
+      dispose: (router) => router.dispose(),
     );
 }
 
 /// Builds the app from the dependencies registered by
 /// [configureDependencies].
-CraveApp createApp() {
-  final authBloc = getIt<AuthBloc>();
-  return CraveApp(
-    config: getIt<AppConfig>(),
-    authBloc: authBloc,
-    router: createRouter(authBloc: authBloc, apiClient: getIt<ApiClient>()),
-  );
-}
+CraveApp createApp() => CraveApp(
+  config: getIt<AppConfig>(),
+  authBloc: getIt<AuthBloc>(),
+  router: getIt<GoRouter>(),
+);
 
 Future<void> resetDependencies() => getIt.reset();

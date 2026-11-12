@@ -1,6 +1,5 @@
 import 'package:api_client/api_client.dart';
 import 'package:auth_feature/auth_feature.dart';
-import 'package:customer_app/app/stream_listenable.dart';
 import 'package:customer_app/features/home/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -13,17 +12,19 @@ abstract final class Routes {
 
 /// Builds the app's router.
 ///
-/// Every navigation, and every [authBloc] state change, is redirected to
-/// match the auth state: [Routes.splash] until the stored session has been
-/// checked, [Routes.signIn] when signed out, and away from both once signed
-/// in.
+/// Every navigation, and every notification from [refreshListenable], is
+/// redirected to match [authBloc]'s state: [Routes.splash] until the stored
+/// session has been checked, [Routes.signIn] when signed out, and away from
+/// both once signed in. [refreshListenable] should notify on each [authBloc]
+/// state. The caller owns it and disposes it after the router.
 GoRouter createRouter({
   required AuthBloc authBloc,
   required ApiClient apiClient,
+  required Listenable refreshListenable,
   String initialLocation = Routes.home,
 }) => GoRouter(
   initialLocation: initialLocation,
-  refreshListenable: StreamListenable(authBloc.stream),
+  refreshListenable: refreshListenable,
   redirect: (context, state) =>
       authRedirect(authBloc.state, state.matchedLocation),
   routes: [

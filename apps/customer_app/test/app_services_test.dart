@@ -4,9 +4,12 @@ import 'package:auth_feature/auth_feature.dart';
 import 'package:core/core.dart';
 import 'package:customer_app/app/app_bloc_observer.dart';
 import 'package:customer_app/app/di.dart';
+import 'package:customer_app/app/stream_listenable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 import 'support/test_config.dart';
 
@@ -37,6 +40,13 @@ void main() {
       expect(getIt.isRegistered<AuthBloc>(), isTrue);
     });
 
+    test('registers the router and the listenable that refreshes it', () async {
+      await configureDependencies(config: config, logger: logger);
+
+      expect(getIt.isRegistered<StreamListenable>(), isTrue);
+      expect(getIt.isRegistered<GoRouter>(), isTrue);
+    });
+
     test('starts the auth bloc, which finds no stored session', () async {
       await configureDependencies(config: config, logger: logger);
       final bloc = getIt<AuthBloc>();
@@ -55,14 +65,27 @@ void main() {
 
       expect(app.config, same(config));
       expect(app.authBloc, same(getIt<AuthBloc>()));
+      expect(app.router, same(getIt<GoRouter>()));
     });
 
-    test('resetting closes the auth bloc', () async {
+    test('resetting disposes the router and its listenable and closes the '
+        'auth bloc', () async {
       await configureDependencies(config: config, logger: logger);
+      final router = getIt<GoRouter>();
+      final listenable = getIt<StreamListenable>();
       final bloc = getIt<AuthBloc>();
 
       await resetDependencies();
 
+      // Both throw only once disposed.
+      expect(
+        () => ChangeNotifier.debugAssertNotDisposed(router.routerDelegate),
+        throwsFlutterError,
+      );
+      expect(
+        () => ChangeNotifier.debugAssertNotDisposed(listenable),
+        throwsFlutterError,
+      );
       expect(bloc.isClosed, isTrue);
     });
   });

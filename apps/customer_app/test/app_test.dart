@@ -7,6 +7,7 @@ import 'package:auth_feature/auth_feature.dart';
 import 'package:core/core.dart';
 import 'package:customer_app/app/app.dart';
 import 'package:customer_app/app/router.dart';
+import 'package:customer_app/app/stream_listenable.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -45,15 +46,18 @@ void main() {
     final session = AuthSession(gateway: gateway, store: store);
     authBloc = AuthBloc(session: session);
     if (start) authBloc.add(const AuthStarted());
+    final refreshListenable = StreamListenable(authBloc.stream);
     final router = createRouter(
       authBloc: authBloc,
       apiClient: server.client,
+      refreshListenable: refreshListenable,
       initialLocation: initialLocation,
     );
     // Teardown runs after the fake-async zone stops being pumped, so awaiting
     // close here would hang. Start it and let it finish on its own.
     addTearDown(() {
       router.dispose();
+      refreshListenable.dispose();
       unawaited(authBloc.close());
       unawaited(session.dispose());
     });
