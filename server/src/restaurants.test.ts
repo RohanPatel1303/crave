@@ -100,3 +100,72 @@ describe("GET /restaurants/:id/menu", () => {
     expect(response.body).toMatchObject({ code: "UNAUTHORIZED" });
   });
 });
+
+describe("menu caching", () => {
+  it("sends an ETag and Cache-Control: private, no-cache", async () => {
+    const response = await get("/restaurants/taco-place/menu");
+
+    expect(response.status).toBe(200);
+    expect(response.headers.etag).toMatch(/^W\/".+"$/);
+    expect(response.headers["cache-control"]).toBe("private, no-cache");
+  });
+
+  it("returns 304 with an empty body when If-None-Match matches", async () => {
+    const first = await get("/restaurants/taco-place/menu");
+    const etag = first.headers.etag as string;
+
+    const response = await get("/restaurants/taco-place/menu").set(
+      "If-None-Match",
+      etag,
+    );
+
+    expect(response.status).toBe(304);
+    expect(response.text).toBe("");
+  });
+
+  it("returns a different ETag when the catalog's menu differs", async () => {
+    const repricedMenu = {
+      restaurantId: "taco-place",
+      currency: "USD",
+      categories: [
+        {
+          id: "tacos",
+          name: "Tacos",
+          items: [
+            {
+              id: "al-pastor",
+              name: "Al pastor taco",
+              description: "Pork and pineapple",
+              price: { minorUnits: 500, currency: "USD" },
+              available: true,
+            },
+          ],
+        },
+      ],
+    };
+    const otherApp = createApp({
+      config,
+      logger: pino({ level: "silent" }),
+      tokenVerifier,
+      catalog: createCatalog({ restaurants, menus: [repricedMenu] }),
+    });
+
+    const original = await get("/restaurants/taco-place/menu");
+    const repriced = await request(otherApp)
+      .get("/restaurants/taco-place/menu")
+      .set("Authorization", "Bearer test-token");
+
+    expect(repriced.status).toBe(200);
+    expect(repriced.headers.etag).toBeDefined();
+    expect(repriced.headers.etag).not.toBe(original.headers.etag);
+  });
+});
+
+describe("restaurants caching", () => {
+  it("sends Cache-Control: private, no-cache on the list", async () => {
+    const response = await get("/restaurants");
+
+    expect(response.headers.etag).toMatch(/^W\/".+"$/);
+    expect(response.headers["cache-control"]).toBe("private, no-cache");
+  });
+});
