@@ -5,6 +5,7 @@ import { Writable } from "node:stream";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { createApp } from "./app.js";
+import { createCatalog } from "./catalog/catalog.js";
 import { loadConfig } from "./config.js";
 import { ApiError } from "./error.js";
 import type { TokenVerifier } from "./token-verifier.js";
@@ -14,6 +15,7 @@ const config = loadConfig({
   OIDC_ISSUER: "http://localhost:8081/realms/crave",
   OIDC_AUDIENCE: "crave-api",
 });
+const catalog = createCatalog({ restaurants: [], menus: [] });
 const tokenVerifier: TokenVerifier = () =>
   Promise.resolve({
     id: "test-user",
@@ -22,7 +24,7 @@ const tokenVerifier: TokenVerifier = () =>
 
 describe("GET /health", () => {
   it("returns the health JSON without starting a listener", async () => {
-    const app = createApp({ config, logger, tokenVerifier });
+    const app = createApp({ config, logger, tokenVerifier, catalog });
 
     const response = await request(app).get("/health");
 
@@ -31,7 +33,7 @@ describe("GET /health", () => {
   });
 
   it("generates a request ID and returns it in the response header", async () => {
-    const app = createApp({ config, logger, tokenVerifier });
+    const app = createApp({ config, logger, tokenVerifier, catalog });
 
     const response = await request(app).get("/health");
 
@@ -40,7 +42,7 @@ describe("GET /health", () => {
   });
 
   it("reuses a reasonable incoming request ID", async () => {
-    const app = createApp({ config, logger, tokenVerifier });
+    const app = createApp({ config, logger, tokenVerifier, catalog });
 
     const response = await request(app)
       .get("/health")
@@ -50,7 +52,7 @@ describe("GET /health", () => {
   });
 
   it("replaces an invalid incoming request ID", async () => {
-    const app = createApp({ config, logger, tokenVerifier });
+    const app = createApp({ config, logger, tokenVerifier, catalog });
 
     const response = await request(app)
       .get("/health")
@@ -63,7 +65,7 @@ describe("GET /health", () => {
 
 describe("error responses", () => {
   it("returns a request-ID-bearing JSON envelope for unknown routes", async () => {
-    const app = createApp({ config, logger, tokenVerifier });
+    const app = createApp({ config, logger, tokenVerifier, catalog });
 
     const response = await request(app)
       .get("/missing")
@@ -158,6 +160,7 @@ function createErrorTestApp(testLogger: Logger = logger) {
     config,
     logger: testLogger,
     tokenVerifier,
+    catalog,
     extraRoutes: [routes],
   });
 }

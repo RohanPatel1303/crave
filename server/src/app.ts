@@ -3,16 +3,19 @@ import express, { type Express, type RequestHandler } from "express";
 import type { Logger } from "pino";
 import { pinoHttp } from "pino-http";
 import { requireAuth } from "./auth.js";
+import type { Catalog } from "./catalog/catalog.js";
 import type { Config } from "./config.js";
 import { errorHandler, notFoundHandler } from "./error.js";
 import healthRoute from "./routes/health.js";
 import meRoute from "./routes/me.js";
+import { restaurantsRoute } from "./routes/restaurants.js";
 import type { TokenVerifier } from "./token-verifier.js";
 
 type AppOptions = {
   config: Config;
   logger: Logger;
   tokenVerifier: TokenVerifier;
+  catalog: Catalog;
   extraRoutes?: RequestHandler[];
 };
 
@@ -22,6 +25,7 @@ export function createApp({
   config,
   logger,
   tokenVerifier,
+  catalog,
   extraRoutes = [],
 }: AppOptions): Express {
   const app = express();
@@ -50,6 +54,7 @@ export function createApp({
   app.use(healthRoute);
   app.use(requireAuth(tokenVerifier));
   app.use(meRoute);
+  app.use(restaurantsRoute(catalog));
   if (extraRoutes.length > 0) {
     app.use(...extraRoutes);
   }
