@@ -13,6 +13,8 @@ Authorization: Bearer <access token>
 | --- | --- |
 | `GET /health` | public |
 | `GET /me` | bearer token |
+| `GET /restaurants` | bearer token |
+| `GET /restaurants/{restaurantId}/menu` | bearer token |
 | everything else | bearer token |
 
 New routes are protected by default because they are mounted after the
@@ -43,6 +45,55 @@ Returns the authenticated user from the verified token:
 ```
 
 `id` is the token's `sub` claim and `email` is its `email` claim.
+
+### `GET /restaurants`
+
+Returns the restaurants available to the authenticated user:
+
+```json
+{
+  "restaurants": [
+    { "id": "taqueria-sol", "name": "Taqueria Sol", "cuisine": "Mexican" }
+  ]
+}
+```
+
+Restaurant IDs contain only lowercase letters, digits, and hyphens.
+
+### `GET /restaurants/{restaurantId}/menu`
+
+Returns the menu for the requested restaurant. The `restaurantId` path
+parameter must contain only lowercase letters, digits, and hyphens.
+
+```json
+{
+  "restaurantId": "taqueria-sol",
+  "currency": "USD",
+  "categories": [
+    {
+      "id": "tacos",
+      "name": "Tacos",
+      "items": [
+        {
+          "id": "al-pastor",
+          "name": "Al pastor taco",
+          "description": "Pork, pineapple, onion, cilantro",
+          "price": { "minorUnits": 450, "currency": "USD" },
+          "available": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+Menu requests support the `If-None-Match` request header. If the supplied
+validator matches the current menu representation, the server returns
+`304 Not Modified` without a response body.
+
+An ID that is syntactically valid but does not identify a restaurant returns
+`404` with code `NOT_FOUND`. A malformed ID returns `400` with code
+`VALIDATION`.
 
 ## Errors
 
