@@ -91,6 +91,10 @@ Menu requests support the `If-None-Match` request header. If the supplied
 validator matches the current menu representation, the server returns
 `304 Not Modified` without a response body.
 
+Both `GET /restaurants` and menu responses carry an `ETag` and
+`Cache-Control: private, no-cache`: clients may cache them but must
+revalidate before reuse, and shared caches must not store them.
+
 An ID that is syntactically valid but does not identify a restaurant returns
 `404` with code `NOT_FOUND`. A malformed ID returns `400` with code
 `VALIDATION`.

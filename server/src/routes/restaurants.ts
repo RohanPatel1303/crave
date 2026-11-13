@@ -6,10 +6,15 @@ import { ApiError } from "../error.js";
 
 const MenuParams = z.object({ id: Id });
 
+// Per-user (behind auth) and must be revalidated; Express's weak ETag
+// handles If-None-Match and returns 304 when unchanged.
+const cacheControl = "private, no-cache";
+
 export function restaurantsRoute(catalog: Catalog): Router {
   const router = Router();
 
   router.get("/restaurants", (_req, res) => {
+    res.set("Cache-Control", cacheControl);
     res.status(200).json({ restaurants: catalog.listRestaurants() });
   });
 
@@ -19,6 +24,7 @@ export function restaurantsRoute(catalog: Catalog): Router {
     if (menu === undefined) {
       throw new ApiError(404, "NOT_FOUND", "Restaurant not found");
     }
+    res.set("Cache-Control", cacheControl);
     res.status(200).json(menu);
   });
 
