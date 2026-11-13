@@ -1,12 +1,15 @@
 import { createRemoteJWKSet } from "jose";
 import pino from "pino";
 import { createApp } from "./app.js";
+import { createCatalog } from "./catalog/catalog.js";
+import { seed } from "./catalog/seed.js";
 import { loadConfig } from "./config.js";
 import { createTokenVerifier } from "./token-verifier.js";
 
 async function startServer(): Promise<void> {
   const config = loadConfig(process.env);
   const logger = pino({ level: config.LOG_LEVEL });
+  const catalog = createCatalog(seed);
   const issuerBase = config.OIDC_ISSUER.endsWith("/")
     ? config.OIDC_ISSUER
     : `${config.OIDC_ISSUER}/`;
@@ -39,7 +42,12 @@ async function startServer(): Promise<void> {
     config.OIDC_ISSUER,
     config.OIDC_AUDIENCE,
   );
-  const app = createApp({ config, logger, tokenVerifier });
+  const app = createApp({
+    config,
+    logger,
+    tokenVerifier,
+    catalog: catalog,
+  });
 
   app.listen(config.PORT, () => {
     logger.info({ port: config.PORT }, "Server listening");

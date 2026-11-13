@@ -4,12 +4,14 @@ import request, { type Response } from "supertest";
 import { Writable } from "node:stream";
 import { beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
+import { createCatalog } from "./catalog/catalog.js";
 import { loadConfig } from "./config.js";
 import { createTokenVerifier } from "./token-verifier.js";
 
 const issuer = "http://localhost:8081/realms/crave";
 const audience = "crave-api";
 const config = loadConfig({ OIDC_ISSUER: issuer, OIDC_AUDIENCE: audience });
+const catalog = createCatalog({ restaurants: [], menus: [] });
 
 describe("OIDC authentication", () => {
   let privateKey: CryptoKey;
@@ -25,6 +27,7 @@ describe("OIDC authentication", () => {
       config,
       logger: pino({ level: "silent" }),
       tokenVerifier,
+      catalog,
     });
   });
 
@@ -138,6 +141,7 @@ describe("OIDC authentication", () => {
       logger: pino({ level: "warn" }, destination),
       tokenVerifier: (failedToken) =>
         Promise.reject(new Error(`token rejected: ${failedToken}`)),
+      catalog,
     });
     const token = await signToken();
 
