@@ -46,4 +46,34 @@ void main() {
     expect(report.failures, contains(contains('packages/core')));
     expect(report.failures, contains(contains('missing coverage/lcov.info')));
   });
+
+  test('ignores records for generated .g.dart files', () {
+    const lcov =
+        'SF:lib/src/menu.dart\nDA:1,1\nLF:10\nLH:9\nend_of_record\n'
+        'SF:lib/src/database.g.dart\nDA:1,0\nLF:5000\nLH:0\nend_of_record\n';
+
+    final report = evaluateCoverage(
+      {'packages/core': lcov},
+      packagesWithTests: {'packages/core'},
+    );
+
+    expect(report.packages['packages/core']?.linesFound, 10);
+    expect(report.packages['packages/core']?.linesHit, 9);
+    expect(report.passes, isTrue);
+  });
+
+  test('reports zero lines found for a package with only generated lines', () {
+    const generatedOnly =
+        'SF:lib/src/database.g.dart\nLF:5000\nLH:0\nend_of_record\n';
+
+    final report = evaluateCoverage(
+      {'packages/core': 'LF:10\nLH:9\n', 'packages/data/local': generatedOnly},
+      packagesWithTests: {'packages/core', 'packages/data/local'},
+    );
+
+    expect(report.packages['packages/data/local']?.linesFound, 0);
+    expect(report.packages['packages/data/local']?.linesHit, 0);
+    expect(report.total.linesFound, 10);
+    expect(report.passes, isTrue);
+  });
 }
