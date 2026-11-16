@@ -94,9 +94,11 @@ class MenuItems extends Table {
   Set<Column> get primaryKey => {restaurantId, id};
 
   @override
-  List<String> get customConstraints => [_categoryForeignKey];
-}
-
-const _categoryForeignKey =
+  List<String> get customConstraints => [
+    // drift_dev reads this statically to export the schema, so it must be a
+    // string literal here, not a reference to a constant.
+    // ignore: no_adjacent_strings_in_list
     'FOREIGN KEY (restaurant_id, category_id) '
-    'REFERENCES menu_categories (restaurant_id, id) ON DELETE CASCADE';
+        'REFERENCES menu_categories (restaurant_id, id) ON DELETE CASCADE',
+  ];
+}
