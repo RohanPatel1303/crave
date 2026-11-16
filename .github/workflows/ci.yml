@@ -30,6 +30,12 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+        
+      - name: Check generated code is current
+        working-directory: packages/data/local_store
+        run: |
+          dart run build_runner build --delete-conflicting-outputs
+          git diff --exit-code
 
       - name: Check formatting
         run: dart format --set-exit-if-changed .
