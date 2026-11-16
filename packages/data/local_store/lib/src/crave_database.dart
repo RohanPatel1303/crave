@@ -24,4 +24,18 @@ class CraveDatabase extends _$CraveDatabase {
       await customStatement('PRAGMA foreign_keys = ON');
     },
   );
+
+  /// Adds the category-to-item cascade, which drift cannot see because it
+  /// is a custom constraint, so streams over items re-emit when it runs.
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => StreamQueryUpdateRules([
+    ...super.streamUpdateRules.rules,
+    const WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'menu_categories',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('menu_items', kind: UpdateKind.delete)],
+    ),
+  ]);
 }

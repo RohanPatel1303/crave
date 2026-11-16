@@ -10,7 +10,7 @@ It has no tables or repositories yet.
 
 ## Dependencies
 
-This is a layer 1 data package. It depends only on `core` and `drift`.
+This is a layer 1 data package. It depends only on `core`, `drift` and `meta`.
 Dependencies point one way: feature packages may depend on this package, never
 the reverse, so this package knows nothing about Bloc or UI.
 
