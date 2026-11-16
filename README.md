@@ -44,7 +44,7 @@ dependency layers.
 | 0007 | Hosted sign-in with OIDC | [Read](docs/adr/0007-hosted-sign-in-with-oidc.md) |
 | 0008 | HTTP client behind an API client | [Read](docs/adr/0008-http-client-behind-api-client.md) |
 | 0009 | Token storage and refresh | [Read](docs/adr/0009-token-storage-and-refresh.md) |
-| 0010 | Local database with drift (proposed) | [Read](docs/adr/0010-local-database-with-drift.md) |
+| 0010 | Local database with drift | [Read](docs/adr/0010-local-database-with-drift.md) |
 
 ## Getting started
 

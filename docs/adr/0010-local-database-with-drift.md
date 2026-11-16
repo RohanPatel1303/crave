@@ -1,6 +1,6 @@
 # 0010. Local database with drift
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-14
 
 ## Context
@@ -116,8 +116,13 @@ Release and publisher information below was checked on pub.dev on
 
 Use drift over SQLite for the customer app's local database. Put it in a new
 layer 1 package under `packages/data/`, following
-[ADR 0005](0005-layered-package-dependencies.md). Features depend on that
-package's repositories, which return `Result<T>` per
+[ADR 0005](0005-layered-package-dependencies.md).
+
+That package exposes DAOs that take and return plain `Stored*` classes, not
+drift's generated row classes. It has no repositories. A menu repository needs
+both this package and `ApiClient`, and layer 1 packages cannot depend on each
+other, so repositories live in the feature packages. They combine the DAOs
+with `ApiClient` and return `Result<T>` per
 [ADR 0003](0003-errors-as-values.md). Features never use drift directly.
 
 Commit the exported schema for every released version, and add a

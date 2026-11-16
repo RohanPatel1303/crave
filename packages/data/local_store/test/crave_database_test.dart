@@ -102,6 +102,34 @@ void main() {
     },
   );
 
+  test('a watcher of only menu items re-emits when a category delete '
+      'cascades to its items', () async {
+    await seed('r1');
+    await insertCategory('r1', 'drinks');
+    await insertItem('r1', 'drinks', 'tea');
+    final emissions = <List<String>>[];
+    final subscription = db
+        .select(db.menuItems)
+        .watch()
+        .map((items) => [for (final item in items) item.id])
+        .listen(emissions.add);
+    addTearDown(subscription.cancel);
+    await pumpEventQueue();
+    expect(emissions, [
+      ['curry', 'tea'],
+    ]);
+
+    await (db.delete(
+      db.menuCategories,
+    )..where((c) => c.id.equals('mains'))).go();
+    await pumpEventQueue();
+
+    expect(emissions, [
+      ['curry', 'tea'],
+      ['tea'],
+    ]);
+  });
+
   test('deleting a category cascades only to its own items', () async {
     await seed('r1');
     await insertCategory('r1', 'drinks');
