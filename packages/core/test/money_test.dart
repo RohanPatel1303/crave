@@ -88,5 +88,12 @@ void main() {
       expect(larger.compareTo(smaller), greaterThan(0));
       expect(smaller.compareTo(Money(100, currency: 'USD')), 0);
     });
+
+    test('isValidCurrency accepts only three uppercase letters', () {
+      expect(Money.isValidCurrency('USD'), isTrue);
+      for (final code in ['usd', 'Usd', 'US', 'USDT', 'U1D', '']) {
+        expect(Money.isValidCurrency(code), isFalse, reason: code);
+      }
+    });
   });
 }
