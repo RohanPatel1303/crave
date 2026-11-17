@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:api_client/src/current_user.dart';
 import 'package:api_client/src/failure_mapping.dart';
+import 'package:api_client/src/revalidated.dart';
 import 'package:core/core.dart';
 import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
@@ -186,6 +187,43 @@ final class ApiClient {
           options: Options(extra: {'authenticated': authenticated}),
         );
         return decode(response.data);
+      },
+      onError: (error, _) =>
+          error is DioException ? mapDioException(error) : null,
+    );
+  }
+
+  /// Performs an authenticated conditional GET that sends [etag] as
+  /// `If-None-Match` when it is not `null`.
+  ///
+  /// Gives [NotModified] for a 304, without calling [decode]. Gives [Fresh]
+  /// with the decoded body and the response's ETag for a 2xx. Every other
+  /// status fails as it would for [get], and a 401 is refreshed and retried
+  /// the same way.
+  Future<Result<Revalidated<T>>> getIfChanged<T>(
+    String path, {
+    required String? etag,
+    required T Function(Object? json) decode,
+  }) {
+    return Result.guardAsync(
+      () async {
+        final response = await _dio.get<Object?>(
+          path,
+          options: Options(
+            headers: {'If-None-Match': ?etag},
+            // Dio rejects every status outside 2xx, and 304 is a success here.
+            validateStatus: (status) =>
+                status != null &&
+                (status == 304 || (status >= 200 && status < 300)),
+          ),
+        );
+        if (response.statusCode == 304) {
+          return NotModified<T>();
+        }
+        return Fresh(
+          decode(response.data),
+          etag: response.headers.value('etag'),
+        );
       },
       onError: (error, _) =>
           error is DioException ? mapDioException(error) : null,
