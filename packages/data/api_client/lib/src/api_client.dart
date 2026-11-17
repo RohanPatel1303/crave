@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:api_client/src/api_menu.dart';
 import 'package:api_client/src/current_user.dart';
 import 'package:api_client/src/failure_mapping.dart';
 import 'package:api_client/src/revalidated.dart';
@@ -232,6 +233,21 @@ final class ApiClient {
 
   /// Fetches the currently authenticated user.
   Future<Result<CurrentUser>> me() => get('/me', decode: CurrentUser.fromJson);
+
+  /// Fetches the restaurants available to the user, in the server's order.
+  Future<Result<List<ApiRestaurant>>> restaurants() =>
+      get('/restaurants', decode: ApiRestaurant.listFromJson);
+
+  /// Fetches the menu of [restaurantId], or learns that the copy with [etag]
+  /// is still current.
+  Future<Result<Revalidated<ApiMenu>>> menu(
+    String restaurantId, {
+    String? etag,
+  }) => getIfChanged(
+    '/restaurants/${Uri.encodeComponent(restaurantId)}/menu',
+    etag: etag,
+    decode: ApiMenu.fromJson,
+  );
 }
 
 String _generateRequestId() {
