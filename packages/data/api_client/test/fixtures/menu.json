@@ -1,0 +1,19 @@
+{
+  "restaurantId": "taqueria-sol",
+  "currency": "USD",
+  "categories": [
+    {
+      "id": "tacos",
+      "name": "Tacos",
+      "items": [
+        {
+          "id": "al-pastor",
+          "name": "Al pastor taco",
+          "description": "Pork, pineapple, onion, cilantro",
+          "price": { "minorUnits": 450, "currency": "USD" },
+          "available": true
+        }
+      ]
+    }
+  ]
+}

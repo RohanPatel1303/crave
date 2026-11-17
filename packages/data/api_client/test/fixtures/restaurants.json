@@ -1,0 +1,5 @@
+{
+  "restaurants": [
+    { "id": "taqueria-sol", "name": "Taqueria Sol", "cuisine": "Mexican" }
+  ]
+}
