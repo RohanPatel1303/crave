@@ -60,9 +60,14 @@ final class Money implements Comparable<Money> {
   Money operator *(int quantity) =>
       Money(minorUnits * quantity, currency: currency);
 
+  /// Whether [currency] is a valid currency code: three uppercase ASCII
+  /// letters, such as `USD`.
+  static bool isValidCurrency(String currency) =>
+      currency.length == 3 &&
+      currency.codeUnits.every((unit) => unit >= 0x41 && unit <= 0x5a);
+
   static void _validateCurrency(String currency) {
-    if (currency.length != 3 ||
-        currency.codeUnits.any((unit) => unit < 0x41 || unit > 0x5a)) {
+    if (!isValidCurrency(currency)) {
       throw ArgumentError.value(
         currency,
         'currency',
