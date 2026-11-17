@@ -71,8 +71,9 @@ package exposes two things:
 
 - `watch...()` returns the DAO stream, mapped into the feature's own models.
 - `refresh()` calls the API and writes the result with the DAO. It sends the
-  stored ETag, writes nothing on `NotModified`, and writes the new menu and
-  ETag on `Fresh`. It returns `Result<void>`
+  stored ETag. On `Fresh` it writes the new menu and ETag. On `NotModified`
+  it calls `MenuDao.markMenuFetched`, which moves only `fetchedAt` forward,
+  because a 304 confirms the stored copy is current. It returns `Result<void>`
   ([ADR 0003](0003-errors-as-values.md)), so a failed refresh is a value the
   BLoC can report.
 
@@ -111,8 +112,9 @@ a DAO with `ApiClient`, maps rows into the feature's models, and returns
   refresh and retry are just new calls to `refresh()`.
 - Any screen watching a menu updates as soon as another screen refreshes it,
   with no extra code.
-- Unchanged menus cost one small request and no write, because `refresh()`
-  sends the stored ETag and a `NotModified` writes nothing.
+- Unchanged menus cost one small request and a one-column update, because
+  `refresh()` sends the stored ETag and a `NotModified` only moves
+  `fetchedAt` forward.
 - **Three model shapes for the same data.** Each layer has its own type, and
   each boundary needs a mapping and tests for it:
   - `ApiMenu` in `api_client`, matching the JSON contract in `docs/api.md`.

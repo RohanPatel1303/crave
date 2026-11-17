@@ -175,4 +175,59 @@ void main() {
       throwsA(isA<SqliteException>()),
     );
   });
+
+  group('markMenuFetched', () {
+    final later = DateTime.utc(2026, 11, 16, 9);
+    final categories = [
+      StoredCategory(id: 'mains', name: 'Mains', items: [_item('curry')]),
+    ];
+
+    test('moves fetchedAt forward and keeps the categories and ETag', () async {
+      await dao.replaceRestaurants([_thai]);
+      await dao.replaceMenu(_menu('r1', categories, etag: '"v1"'));
+
+      await dao.markMenuFetched('r1', later);
+
+      expect(
+        await dao.watchMenu('r1').first,
+        StoredMenu(
+          restaurantId: 'r1',
+          currency: 'USD',
+          etag: '"v1"',
+          fetchedAt: later,
+          categories: categories,
+        ),
+      );
+    });
+
+    test("leaves other restaurants' menus alone", () async {
+      await dao.replaceRestaurants([_thai, _pizza]);
+      await dao.replaceMenu(_menu('r1', categories));
+      final pizzaMenu = _menu('r2', categories, etag: '"p1"');
+      await dao.replaceMenu(pizzaMenu);
+
+      await dao.markMenuFetched('r1', later);
+
+      expect(await dao.watchMenu('r2').first, pizzaMenu);
+    });
+
+    test('does nothing for an unknown restaurant', () async {
+      await dao.replaceRestaurants([_thai]);
+      final menu = _menu('r1', categories, etag: '"v1"');
+      await dao.replaceMenu(menu);
+
+      await dao.markMenuFetched('missing', later);
+
+      expect(await dao.watchMenu('missing').first, isNull);
+      expect(await dao.watchMenu('r1').first, menu);
+    });
+
+    test('does not create a menu for a restaurant that has none', () async {
+      await dao.replaceRestaurants([_thai]);
+
+      await dao.markMenuFetched('r1', later);
+
+      expect(await dao.watchMenu('r1').first, isNull);
+    });
+  });
 }

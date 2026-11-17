@@ -24,6 +24,9 @@ was chosen.
     listed keep their menus, and the rest are deleted with theirs.
   - `replaceMenu(menu)` replaces a menu in one transaction, so watchers never
     see it half written.
+  - `markMenuFetched(restaurantId, at)` moves only a stored menu's
+    `fetchedAt` forward, keeping its categories and ETag, such as after a
+    304 confirms it is current. It does nothing if there is no stored menu.
 - **`package:local_store/testing.dart`:** `inMemoryCraveDatabase()` opens an
   empty database in memory, so tests in other packages need not import drift.
   Close it in `tearDown`. Import this library only from tests.
