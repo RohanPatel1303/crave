@@ -24,7 +24,7 @@ same layer cannot depend on one another. See
 | Layer | Packages | May depend on |
 | --- | --- | --- |
 | 0 | `packages/core` | External packages only; never Flutter |
-| 1 | `packages/design_system`, `packages/data/api_client`, `packages/data/auth` | Layer 0 and external packages |
+| 1 | `packages/design_system`, `packages/data/api_client`, `packages/data/auth`, `packages/data/local_store` | Layer 0 and external packages |
 | 2 | `packages/features/*`: `packages/features/auth` (`auth_feature`) | Layers 0 and 1, plus external packages |
 | 3 | `apps/*` | Layers 0, 1, and 2, plus external packages |
 
@@ -45,6 +45,7 @@ dependency layers.
 | 0008 | HTTP client behind an API client | [Read](docs/adr/0008-http-client-behind-api-client.md) |
 | 0009 | Token storage and refresh | [Read](docs/adr/0009-token-storage-and-refresh.md) |
 | 0010 | Local database with drift | [Read](docs/adr/0010-local-database-with-drift.md) |
+| 0011 | Offline-first reads (accepted) | [Read](docs/adr/0011-offline-first-reads.md) |
 
 ## Getting started
 
