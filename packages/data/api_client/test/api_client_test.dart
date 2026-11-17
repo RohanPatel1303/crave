@@ -348,6 +348,136 @@ void main() {
       expect(client.adapter.requests, hasLength(1));
     });
   });
+  group('ApiClient getIfChanged', () {
+    String decodeMenu(Object? json) =>
+        (json! as Map<String, dynamic>)['name']! as String;
+
+    test('sends If-None-Match when given an etag', () async {
+      final client = _client(respond: (_) => _notModified());
+
+      await client.apiClient.getIfChanged(
+        '/menus/r1',
+        etag: '"v1"',
+        decode: decodeMenu,
+      );
+
+      expect(client.adapter.requests.single.headers['If-None-Match'], '"v1"');
+    });
+
+    test('sends no If-None-Match when the etag is null', () async {
+      final client = _client(respond: (_) => _jsonResponse({'name': 'Thai'}));
+
+      await client.apiClient.getIfChanged(
+        '/menus/r1',
+        etag: null,
+        decode: decodeMenu,
+      );
+
+      expect(
+        client.adapter.requests.single.headers,
+        isNot(contains('If-None-Match')),
+      );
+    });
+
+    test('a 200 gives Fresh with the decoded value and the new ETag', () async {
+      final client = _client(
+        respond: (_) =>
+            _jsonResponse({'name': 'Thai'}, headers: {'ETag': '"v2"'}),
+      );
+
+      final result = await client.apiClient.getIfChanged(
+        '/menus/r1',
+        etag: '"v1"',
+        decode: decodeMenu,
+      );
+
+      expect(
+        result,
+        const Ok<Revalidated<String>>(Fresh('Thai', etag: '"v2"')),
+      );
+    });
+
+    test('a 200 without an ETag gives Fresh with a null etag', () async {
+      final client = _client(respond: (_) => _jsonResponse({'name': 'Thai'}));
+
+      final result = await client.apiClient.getIfChanged(
+        '/menus/r1',
+        etag: null,
+        decode: decodeMenu,
+      );
+
+      expect(
+        result.valueOrNull,
+        isA<Fresh<String>>().having((fresh) => fresh.etag, 'etag', isNull),
+      );
+    });
+
+    test('a 304 gives NotModified without calling decode', () async {
+      var decodeCalls = 0;
+      final client = _client(respond: (_) => _notModified());
+
+      final result = await client.apiClient.getIfChanged<Object?>(
+        '/menus/r1',
+        etag: '"v1"',
+        decode: (json) {
+          decodeCalls++;
+          return json;
+        },
+      );
+
+      expect(result, const Ok<Revalidated<Object?>>(NotModified()));
+      expect(decodeCalls, 0);
+    });
+
+    test('a 500 still gives Err(ServerFailure)', () async {
+      final client = _client(
+        respond: (_) => _jsonResponse({
+          'code': 'INTERNAL',
+          'message': 'boom',
+        }, statusCode: 500),
+      );
+
+      final result = await client.apiClient.getIfChanged(
+        '/menus/r1',
+        etag: '"v1"',
+        decode: decodeMenu,
+      );
+
+      expect(result.failureOrNull, isA<ServerFailure>());
+    });
+
+    test(
+      'a 401 is refreshed and retried once, keeping If-None-Match',
+      () async {
+        var refreshCalls = 0;
+        final client = _client(
+          accessToken: () async => 'old-token',
+          refreshAccessToken: () async {
+            refreshCalls++;
+            return 'new-token';
+          },
+          respond: (options) =>
+              options.headers['Authorization'] == 'Bearer new-token'
+              ? _notModified()
+              : _unauthorized(),
+        );
+
+        final result = await client.apiClient.getIfChanged(
+          '/menus/r1',
+          etag: '"v1"',
+          decode: decodeMenu,
+        );
+
+        expect(result, const Ok<Revalidated<String>>(NotModified()));
+        expect(refreshCalls, 1);
+        expect(client.adapter.requests, hasLength(2));
+        expect(client.adapter.requests.map((r) => r.headers['If-None-Match']), [
+          '"v1"',
+          '"v1"',
+        ]);
+      },
+    );
+  });
 }
 
 final _isUnauthorized = isA<Err<CurrentUser>>().having(
@@ -383,15 +513,28 @@ _ClientHarness _client({
   return _ClientHarness(apiClient, adapter);
 }
 
-Future<ResponseBody> _jsonResponse(Object? body, {int statusCode = 200}) async {
+Future<ResponseBody> _jsonResponse(
+  Object? body, {
+  int statusCode = 200,
+  Map<String, String> headers = const {},
+}) async {
   return ResponseBody.fromString(
     jsonEncode(body),
     statusCode,
     headers: {
       Headers.contentTypeHeader: [Headers.jsonContentType],
+      for (final MapEntry(:key, :value) in headers.entries) key: [value],
     },
   );
 }
+
+Future<ResponseBody> _notModified() async => ResponseBody.fromString(
+  '',
+  304,
+  headers: {
+    'etag': ['"v1"'],
+  },
+);
 
 final class _ClientHarness {
   const _ClientHarness(this.apiClient, this.adapter);
