@@ -8,14 +8,22 @@ import 'package:dio/dio.dart';
 
 /// A canned HTTP response returned by a [FakeApiServer].
 final class FakeResponse {
-  /// Creates a response with [statusCode] and an optional JSON [body].
-  const FakeResponse(this.statusCode, [this.body]);
+  /// Creates a response with [statusCode], an optional JSON [body] and
+  /// optional response [headers].
+  ///
+  /// Pass `null` as [body] to send headers with an empty body, as in
+  /// `FakeResponse(304, null, {'ETag': '"v1"'})`.
+  const FakeResponse(this.statusCode, [this.body, this.headers = const {}]);
 
   /// The HTTP status code.
   final int statusCode;
 
   /// The JSON-encodable response body, or `null` for an empty body.
   final Object? body;
+
+  /// Response headers to send. They are added after the default JSON
+  /// `content-type`, so a `content-type` here replaces it.
+  final Map<String, String> headers;
 }
 
 /// Answers an [ApiClient]'s requests in memory, so tests can use a real
@@ -30,6 +38,11 @@ final class FakeApiServer {
 
   /// Every request received, as `'<METHOD> <path>'`, in order.
   final requests = <String>[];
+
+  /// The headers of every request received, in the same order as
+  /// [requests]. Header names are lowercase, because HTTP header names are
+  /// case-insensitive.
+  final requestHeaders = <Map<String, String>>[];
 
   /// A client that sends its requests to this server, signed in with a fixed
   /// access token.
@@ -56,12 +69,20 @@ final class _Adapter implements HttpClientAdapter {
   ) async {
     final path = options.uri.path;
     _server.requests.add('${options.method} $path');
+    _server.requestHeaders.add(
+      Map.unmodifiable({
+        for (final MapEntry(:key, :value) in options.headers.entries)
+          key.toLowerCase(): '$value',
+      }),
+    );
     final response = await _server.respond(options.method, path);
     return ResponseBody.fromString(
       response.body == null ? '' : jsonEncode(response.body),
       response.statusCode,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
+        for (final MapEntry(:key, :value) in response.headers.entries)
+          key.toLowerCase(): [value],
       },
     );
   }
