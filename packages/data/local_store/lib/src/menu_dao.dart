@@ -111,6 +111,16 @@ class MenuDao extends DatabaseAccessor<CraveDatabase> with _$MenuDaoMixin {
     );
   }
 
+  /// Records that the stored menu of [restaurantId] was confirmed current
+  /// [at] that time, such as after a 304 Not Modified.
+  ///
+  /// Only `fetchedAt` changes; the categories, items and ETag are kept. Does
+  /// nothing if [restaurantId] has no stored menu.
+  Future<void> markMenuFetched(String restaurantId, DateTime at) async {
+    await (update(menus)..where((m) => m.restaurantId.equals(restaurantId)))
+        .write(MenusCompanion(fetchedAt: Value(at)));
+  }
+
   /// Stores [menu] in one transaction, replacing all of its categories and
   /// items, so watchers never see a partly written menu.
   ///
