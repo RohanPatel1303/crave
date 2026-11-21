@@ -1,6 +1,6 @@
 # 0011. Offline-first reads
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-16
 
 ## Context
@@ -128,8 +128,7 @@ a DAO with `ApiClient`, maps rows into the feature's models, and returns
   the extra types and mapping code to keep them independent.
 - **Data can be out of date.** Showing the stored copy first means the user
   can see a menu that has since changed on the server, for as long as the
-  device stays offline or a refresh keeps failing. Day 18 adds a notice that
-  reads the menu's `fetchedAt` and tells the user when the data shown might
+  device stays offline or a refresh keeps failing. The menu screen will show a notice that reads the menu's `fetchedAt` and tells the user when the data shown might
   be stale.
 - A first visit with no network has nothing to show. That case needs its own
   empty state.
