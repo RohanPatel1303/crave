@@ -16,12 +16,14 @@ void main() {
   late FakeApiServer server;
   late InMemoryTokenStore store;
   late AuthBloc authBloc;
+  late int startOrderTaps;
 
   setUp(() => server = FakeApiServer((_, _) => const FakeResponse(200, _user)));
 
   // Built in the test body so the bloc's async work runs in the widget
   // test's fake-async zone.
   Future<void> pumpHome(WidgetTester tester) async {
+    startOrderTaps = 0;
     store = InMemoryTokenStore(
       TokenSet(
         accessToken: 'access',
@@ -42,7 +44,10 @@ void main() {
       MaterialApp(
         home: BlocProvider<AuthBloc>.value(
           value: authBloc,
-          child: HomePage(apiClient: server.client),
+          child: HomePage(
+            apiClient: server.client,
+            onStartOrder: () => startOrderTaps++,
+          ),
         ),
       ),
     );
@@ -91,5 +96,15 @@ void main() {
 
     expect(authBloc.state, isA<Unauthenticated>());
     expect(store.tokens, isNull);
+  });
+
+  testWidgets('Start an order calls onStartOrder', (tester) async {
+    await pumpHome(tester);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Start an order'));
+    await tester.pump();
+
+    expect(startOrderTaps, 1);
   });
 }
