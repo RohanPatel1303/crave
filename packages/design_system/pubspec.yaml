@@ -7,8 +7,10 @@ environment:
   sdk: ^3.13.5
 
 dependencies:
+  core: ^1.0.0
   flutter:
     sdk: flutter
+  intl: ^0.20.3
 
 dev_dependencies:
   coverage: ^1.0.0
