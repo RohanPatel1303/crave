@@ -74,6 +74,7 @@ Future<void> configureDependencies({
       createRouter(
         authBloc: getIt<AuthBloc>(),
         apiClient: getIt<ApiClient>(),
+        menuRepository: getIt<MenuRepository>(),
         refreshListenable: getIt<StreamListenable>(),
       ),
       dispose: (router) => router.dispose(),

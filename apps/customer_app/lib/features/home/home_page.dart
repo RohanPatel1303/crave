@@ -9,9 +9,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 ///
 /// Loads the user once when shown, and again on Retry after a failure.
 class HomePage extends StatefulWidget {
-  const HomePage({required this.apiClient, super.key});
+  const HomePage({
+    required this.apiClient,
+    required this.onStartOrder,
+    super.key,
+  });
 
   final ApiClient apiClient;
+
+  /// Called when the user taps "Start an order".
+  final VoidCallback onStartOrder;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -71,7 +78,10 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
                 const SizedBox(height: Spacing.xl),
-                AppButton(label: 'Start an order', onPressed: () {}),
+                AppButton(
+                  label: 'Start an order',
+                  onPressed: widget.onStartOrder,
+                ),
                 const SizedBox(height: Spacing.md),
                 AppButton(
                   label: 'Sign out',
