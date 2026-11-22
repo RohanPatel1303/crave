@@ -12,8 +12,8 @@ part 'menu_event.dart';
 /// One restaurant's menu, shown from the database and refreshed from the API.
 class MenuBloc extends Bloc<MenuEvent, SyncedState<Menu>> {
   /// Creates a bloc that reads and refreshes the menu of `restaurantId`
-  /// through `repository`. The restaurant must already be stored; see
-  /// [MenuRepository.refreshMenu].
+  /// through `repository`. The restaurant need not be stored yet, as after a
+  /// deep link; see [MenuRepository.refreshMenu].
   MenuBloc({required this._repository, required this._restaurantId})
     : super(const SyncedState()) {
     on<MenuStarted>(_onStarted);

@@ -56,10 +56,25 @@ final class MenuRepository {
   /// - A 304 keeps the stored menu and moves its `fetchedAt` to now.
   /// - A failure is returned unchanged and nothing is written.
   ///
-  /// The restaurant must already be stored, because a menu references its
-  /// restaurant. Screens list restaurants before opening a menu, so call
-  /// [refreshRestaurants] first.
+  /// A menu references its restaurant, so when [restaurantId] is not stored,
+  /// as after a deep link, this calls [refreshRestaurants] first. If that
+  /// fails, its failure is returned; if the restaurant is still not listed, a
+  /// 404 [ServerFailure] is returned, as the API does for an unknown ID. In
+  /// both cases no menu is requested.
   Future<Result<void>> refreshMenu(String restaurantId) async {
+    if (!await _isStored(restaurantId)) {
+      if (await refreshRestaurants() case Err(:final failure)) {
+        return Result.err(failure);
+      }
+      if (!await _isStored(restaurantId)) {
+        return const Result.err(
+          ServerFailure(
+            statusCode: 404,
+            message: "This restaurant isn't available.",
+          ),
+        );
+      }
+    }
     final stored = await _menuDao.watchMenu(restaurantId).first;
     final result = await _apiClient.menu(restaurantId, etag: stored?.etag);
     switch (result) {
@@ -73,6 +88,11 @@ final class MenuRepository {
         await _menuDao.markMenuFetched(restaurantId, _now());
     }
     return const Result.ok(null);
+  }
+
+  Future<bool> _isStored(String restaurantId) async {
+    final restaurants = await _menuDao.watchRestaurants().first;
+    return restaurants.any((restaurant) => restaurant.id == restaurantId);
   }
 }
 

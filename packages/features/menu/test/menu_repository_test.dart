@@ -222,6 +222,71 @@ void main() {
     },
   );
 
+  group('refreshMenu for a restaurant that is not stored, as after a deep '
+      'link', () {
+    test('refreshes the restaurants first, then stores the menu', () async {
+      final result = await repository.refreshMenu('taqueria-sol');
+
+      expect(result, isA<Ok<void>>());
+      expect(server.requests, [
+        'GET /restaurants',
+        'GET /restaurants/taqueria-sol/menu',
+      ]);
+      expect(
+        await repository.watchMenu('taqueria-sol').first,
+        _expectedMenu(fetchedAt: _firstFetch),
+      );
+    });
+
+    test('returns the failure, and requests no menu, when the restaurants '
+        'refresh fails', () async {
+      server = FakeApiServer(
+        (method, path) =>
+            const FakeResponse(503, {'code': 'INTERNAL', 'message': ''}),
+      );
+      repository = MenuRepository(
+        apiClient: server.client,
+        menuDao: db.menuDao,
+        now: () => now,
+      );
+
+      final result = await repository.refreshMenu('taqueria-sol');
+
+      expect(result, isA<Err<void>>());
+      expect(server.requests, ['GET /restaurants']);
+      expect(await repository.watchMenu('taqueria-sol').first, isNull);
+    });
+
+    test('returns a 404 ServerFailure, and requests no menu, when the '
+        'restaurant is not listed', () async {
+      final result = await repository.refreshMenu('closed-diner');
+
+      expect(
+        result,
+        isA<Err<void>>().having(
+          (err) => err.failure,
+          'failure',
+          isA<ServerFailure>().having(
+            (failure) => failure.statusCode,
+            'statusCode',
+            404,
+          ),
+        ),
+      );
+      expect(server.requests, ['GET /restaurants']);
+    });
+  });
+
+  test('refreshMenu does not refresh the restaurants when the restaurant is '
+      'stored', () async {
+    await storeFirstMenu();
+
+    expect(server.requests, [
+      'GET /restaurants',
+      'GET /restaurants/taqueria-sol/menu',
+    ]);
+  });
+
   test('watchMenu never makes a request', () async {
     final emissions = <Menu?>[];
     final subscription = repository
