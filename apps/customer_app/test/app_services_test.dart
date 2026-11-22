@@ -10,6 +10,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:local_store/testing.dart';
+import 'package:menu_feature/menu_feature.dart';
 
 import 'support/test_config.dart';
 
@@ -25,15 +27,23 @@ void main() {
     // in-memory test implementation, with no stored session.
     setUp(() => FlutterSecureStorage.setMockInitialValues({}));
 
+    // Uses an in-memory database instead of opening a file; resetting
+    // closes it.
+    Future<void> configure() => configureDependencies(
+      config: config,
+      logger: logger,
+      database: inMemoryCraveDatabase(),
+    );
+
     test('registers config and logger singletons', () async {
-      await configureDependencies(config: config, logger: logger);
+      await configure();
 
       expect(getIt<AppConfig>(), same(config));
       expect(getIt<AppLogger>(), same(logger));
     });
 
     test('registers the session, API client and auth bloc', () async {
-      await configureDependencies(config: config, logger: logger);
+      await configure();
 
       expect(getIt.isRegistered<AuthSession>(), isTrue);
       expect(getIt.isRegistered<ApiClient>(), isTrue);
@@ -41,14 +51,26 @@ void main() {
     });
 
     test('registers the router and the listenable that refreshes it', () async {
-      await configureDependencies(config: config, logger: logger);
+      await configure();
 
       expect(getIt.isRegistered<StreamListenable>(), isTrue);
       expect(getIt.isRegistered<GoRouter>(), isTrue);
     });
 
+    test('registers the database and the menu repository', () async {
+      final database = inMemoryCraveDatabase();
+      await configureDependencies(
+        config: config,
+        logger: logger,
+        database: database,
+      );
+
+      expect(getIt<CraveDatabase>(), same(database));
+      expect(getIt.isRegistered<MenuRepository>(), isTrue);
+    });
+
     test('starts the auth bloc, which finds no stored session', () async {
-      await configureDependencies(config: config, logger: logger);
+      await configure();
       final bloc = getIt<AuthBloc>();
 
       final state = bloc.state is AuthUnknown
@@ -59,7 +81,7 @@ void main() {
     });
 
     test('createApp builds the app from the registered dependencies', () async {
-      await configureDependencies(config: config, logger: logger);
+      await configure();
 
       final app = createApp();
 
@@ -70,7 +92,7 @@ void main() {
 
     test('resetting disposes the router and its listenable and closes the '
         'auth bloc', () async {
-      await configureDependencies(config: config, logger: logger);
+      await configure();
       final router = getIt<GoRouter>();
       final listenable = getIt<StreamListenable>();
       final bloc = getIt<AuthBloc>();
@@ -87,6 +109,20 @@ void main() {
         throwsFlutterError,
       );
       expect(bloc.isClosed, isTrue);
+    });
+
+    test('resetting closes the database', () async {
+      await configure();
+      final database = getIt<CraveDatabase>();
+      // Opens the database, so there is a connection to close.
+      await database.customSelect('SELECT 1').get();
+
+      await resetDependencies();
+
+      await expectLater(
+        database.customSelect('SELECT 1').get(),
+        throwsA(anything),
+      );
     });
   });
 

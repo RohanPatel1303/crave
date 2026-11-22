@@ -5,16 +5,24 @@ import 'package:core/core.dart';
 import 'package:customer_app/app/app.dart';
 import 'package:customer_app/app/router.dart';
 import 'package:customer_app/app/stream_listenable.dart';
+import 'package:drift_flutter/drift_flutter.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
+import 'package:local_store/local_store.dart';
+import 'package:menu_feature/menu_feature.dart';
 
 /// The service locator. Only this file reads it; everything else gets its
 /// dependencies through constructors.
 final getIt = GetIt.instance;
 
+/// Registers the app's dependencies.
+///
+/// [database] replaces the on-device `crave` database, so tests can pass an
+/// in-memory one. It is registered like the default and closed on reset.
 Future<void> configureDependencies({
   required AppConfig config,
   required AppLogger logger,
+  CraveDatabase? database,
 }) async {
   final session = AuthSession(
     gateway: AppAuthGateway(
@@ -27,10 +35,15 @@ Future<void> configureDependencies({
   );
 
   // GetIt disposes in reverse order: the router, then the listenable that
-  // refreshes it, then the bloc that feeds the listenable, then the session.
+  // refreshes it, then the bloc that feeds the listenable, then the session,
+  // and the database last, after everything that might still read it.
   getIt
     ..registerSingleton<AppConfig>(config)
     ..registerSingleton<AppLogger>(logger)
+    ..registerSingleton<CraveDatabase>(
+      database ?? CraveDatabase(driftDatabase(name: 'crave')),
+      dispose: (db) => db.close(),
+    )
     ..registerSingleton<AuthSession>(
       session,
       dispose: (session) => session.dispose(),
@@ -41,6 +54,12 @@ Future<void> configureDependencies({
         accessToken: session.accessToken,
         refreshAccessToken: session.refresh,
         logger: logger,
+      ),
+    )
+    ..registerSingleton<MenuRepository>(
+      MenuRepository(
+        apiClient: getIt<ApiClient>(),
+        menuDao: getIt<CraveDatabase>().menuDao,
       ),
     )
     ..registerSingleton<AuthBloc>(
