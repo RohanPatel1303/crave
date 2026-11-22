@@ -10,9 +10,11 @@ environment:
 
 dependencies:
   api_client: ^1.0.0
+  bloc_concurrency: ^0.3.0
   core: ^1.0.0
   flutter:
     sdk: flutter
+  flutter_bloc: ^9.1.1
   local_store: ^1.0.0
   meta: ^1.16.0
 

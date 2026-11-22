@@ -1,6 +1,6 @@
 import 'package:core/core.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:menu_feature/src/synced_state.dart';
+import 'package:menu_feature/menu_feature.dart';
 
 String _runtimeString(String value) => String.fromCharCodes(value.codeUnits);
 
