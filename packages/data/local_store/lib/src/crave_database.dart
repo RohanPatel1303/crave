@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:local_store/src/cart_dao.dart';
 import 'package:local_store/src/crave_database.steps.dart';
 import 'package:local_store/src/menu_dao.dart';
 import 'package:local_store/src/tables.dart';
@@ -8,7 +9,7 @@ part 'crave_database.g.dart';
 /// The customer app's on-device database.
 @DriftDatabase(
   tables: [Restaurants, Menus, MenuCategories, MenuItems, CartLines],
-  daos: [MenuDao],
+  daos: [MenuDao, CartDao],
 )
 class CraveDatabase extends _$CraveDatabase {
   /// Opens the database on [executor].

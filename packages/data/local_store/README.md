@@ -1,7 +1,7 @@
 # Local store
 
 This package owns the customer app's on-device database: restaurant and menu
-data stored with [drift](https://pub.dev/packages/drift) on SQLite, so screens
+data, and the cart, stored with [drift](https://pub.dev/packages/drift) on SQLite, so screens
 can render from local data and refresh it from the API. See
 [ADR 0010](../../../docs/adr/0010-local-database-with-drift.md) for why drift
 was chosen.
@@ -10,7 +10,7 @@ was chosen.
 
 - **`CraveDatabase`:** the drift database. It takes a `QueryExecutor` and
   turns on SQLite foreign keys every time it opens.
-- **Four tables:** `Restaurants`, `Menus`, `MenuCategories` and `MenuItems`.
+- **Menu tables:** `Restaurants`, `Menus`, `MenuCategories` and `MenuItems`.
   Each list keeps the server's order in a `position` column. Deleting a
   restaurant cascades to its menu, categories and items. Category and item IDs
   are only unique within a menu, so those tables use `{restaurantId, id}` as
@@ -27,6 +27,20 @@ was chosen.
   - `markMenuFetched(restaurantId, at)` moves only a stored menu's
     `fetchedAt` forward, keeping its categories and ETag, such as after a
     304 confirms it is current. It does nothing if there is no stored menu.
+- **`CartLines` table:** one line per `{restaurantId, itemId}`, with a
+  database `CHECK` that keeps `quantity` between 1 and 99. It has no foreign
+  key to the menu tables, so replacing a menu or the restaurant list never
+  changes the cart.
+- **`CartDao`:** reads and writes the cart using the plain `StoredCartLine`
+  and `NewCartLine` classes.
+  - `watchLines()` emits the lines in the order first added.
+  - `addOne(line)` is a single upsert that inserts quantity 1 or adds 1, so
+    concurrent calls never lose an increment. It throws a `SqliteException`
+    at 99.
+  - `setQuantity(restaurantId, itemId, quantity)` deletes the line at 0 and
+    throws an `ArgumentError` below 0 or above 99.
+  - `clear()` empties the cart, and `replaceWith(line)` clears it and adds
+    one line in one transaction, so watchers never see an empty cart.
 - **`package:local_store/testing.dart`:** `inMemoryCraveDatabase()` opens an
   empty database in memory, so tests in other packages need not import drift.
   Close it in `tearDown`. Import this library only from tests.

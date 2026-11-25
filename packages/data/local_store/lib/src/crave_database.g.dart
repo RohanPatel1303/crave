@@ -2067,6 +2067,7 @@ abstract class _$CraveDatabase extends GeneratedDatabase {
   late final $MenuItemsTable menuItems = $MenuItemsTable(this);
   late final $CartLinesTable cartLines = $CartLinesTable(this);
   late final MenuDao menuDao = MenuDao(this as CraveDatabase);
+  late final CartDao cartDao = CartDao(this as CraveDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
