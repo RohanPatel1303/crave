@@ -1575,6 +1575,489 @@ class MenuItemsCompanion extends UpdateCompanion<MenuItemRow> {
   }
 }
 
+class $CartLinesTable extends CartLines
+    with TableInfo<$CartLinesTable, CartLineRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CartLinesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _restaurantIdMeta = const VerificationMeta(
+    'restaurantId',
+  );
+  @override
+  late final GeneratedColumn<String> restaurantId = GeneratedColumn<String>(
+    'restaurant_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+    'item_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _unitPriceMinorUnitsMeta =
+      const VerificationMeta('unitPriceMinorUnits');
+  @override
+  late final GeneratedColumn<int> unitPriceMinorUnits = GeneratedColumn<int>(
+    'unit_price_minor_units',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _currencyMeta = const VerificationMeta(
+    'currency',
+  );
+  @override
+  late final GeneratedColumn<String> currency = GeneratedColumn<String>(
+    'currency',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 3,
+      maxTextLength: 3,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _quantityMeta = const VerificationMeta(
+    'quantity',
+  );
+  @override
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+    'quantity',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    restaurantId,
+    itemId,
+    name,
+    unitPriceMinorUnits,
+    currency,
+    quantity,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cart_lines';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CartLineRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('restaurant_id')) {
+      context.handle(
+        _restaurantIdMeta,
+        restaurantId.isAcceptableOrUnknown(
+          data['restaurant_id']!,
+          _restaurantIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_restaurantIdMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(
+        _itemIdMeta,
+        itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('unit_price_minor_units')) {
+      context.handle(
+        _unitPriceMinorUnitsMeta,
+        unitPriceMinorUnits.isAcceptableOrUnknown(
+          data['unit_price_minor_units']!,
+          _unitPriceMinorUnitsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_unitPriceMinorUnitsMeta);
+    }
+    if (data.containsKey('currency')) {
+      context.handle(
+        _currencyMeta,
+        currency.isAcceptableOrUnknown(data['currency']!, _currencyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_currencyMeta);
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(
+        _quantityMeta,
+        quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_quantityMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {restaurantId, itemId},
+  ];
+  @override
+  CartLineRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CartLineRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      restaurantId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}restaurant_id'],
+      )!,
+      itemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      unitPriceMinorUnits: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}unit_price_minor_units'],
+      )!,
+      currency: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}currency'],
+      )!,
+      quantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quantity'],
+      )!,
+    );
+  }
+
+  @override
+  $CartLinesTable createAlias(String alias) {
+    return $CartLinesTable(attachedDatabase, alias);
+  }
+}
+
+class CartLineRow extends DataClass implements Insertable<CartLineRow> {
+  /// The local database ID for this cart line.
+  final int id;
+
+  /// The restaurant that offers the cart item.
+  final String restaurantId;
+
+  /// The server's item ID in the restaurant's menu.
+  final String itemId;
+
+  /// The display name of the cart item.
+  final String name;
+
+  /// The item's unit price in the currency's minor units.
+  final int unitPriceMinorUnits;
+
+  /// The ISO 4217 currency code for the unit price.
+  final String currency;
+
+  /// The number of units of this item in the cart.
+  final int quantity;
+  const CartLineRow({
+    required this.id,
+    required this.restaurantId,
+    required this.itemId,
+    required this.name,
+    required this.unitPriceMinorUnits,
+    required this.currency,
+    required this.quantity,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['restaurant_id'] = Variable<String>(restaurantId);
+    map['item_id'] = Variable<String>(itemId);
+    map['name'] = Variable<String>(name);
+    map['unit_price_minor_units'] = Variable<int>(unitPriceMinorUnits);
+    map['currency'] = Variable<String>(currency);
+    map['quantity'] = Variable<int>(quantity);
+    return map;
+  }
+
+  CartLinesCompanion toCompanion(bool nullToAbsent) {
+    return CartLinesCompanion(
+      id: Value(id),
+      restaurantId: Value(restaurantId),
+      itemId: Value(itemId),
+      name: Value(name),
+      unitPriceMinorUnits: Value(unitPriceMinorUnits),
+      currency: Value(currency),
+      quantity: Value(quantity),
+    );
+  }
+
+  factory CartLineRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CartLineRow(
+      id: serializer.fromJson<int>(json['id']),
+      restaurantId: serializer.fromJson<String>(json['restaurantId']),
+      itemId: serializer.fromJson<String>(json['itemId']),
+      name: serializer.fromJson<String>(json['name']),
+      unitPriceMinorUnits: serializer.fromJson<int>(
+        json['unitPriceMinorUnits'],
+      ),
+      currency: serializer.fromJson<String>(json['currency']),
+      quantity: serializer.fromJson<int>(json['quantity']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'restaurantId': serializer.toJson<String>(restaurantId),
+      'itemId': serializer.toJson<String>(itemId),
+      'name': serializer.toJson<String>(name),
+      'unitPriceMinorUnits': serializer.toJson<int>(unitPriceMinorUnits),
+      'currency': serializer.toJson<String>(currency),
+      'quantity': serializer.toJson<int>(quantity),
+    };
+  }
+
+  CartLineRow copyWith({
+    int? id,
+    String? restaurantId,
+    String? itemId,
+    String? name,
+    int? unitPriceMinorUnits,
+    String? currency,
+    int? quantity,
+  }) => CartLineRow(
+    id: id ?? this.id,
+    restaurantId: restaurantId ?? this.restaurantId,
+    itemId: itemId ?? this.itemId,
+    name: name ?? this.name,
+    unitPriceMinorUnits: unitPriceMinorUnits ?? this.unitPriceMinorUnits,
+    currency: currency ?? this.currency,
+    quantity: quantity ?? this.quantity,
+  );
+  CartLineRow copyWithCompanion(CartLinesCompanion data) {
+    return CartLineRow(
+      id: data.id.present ? data.id.value : this.id,
+      restaurantId: data.restaurantId.present
+          ? data.restaurantId.value
+          : this.restaurantId,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      name: data.name.present ? data.name.value : this.name,
+      unitPriceMinorUnits: data.unitPriceMinorUnits.present
+          ? data.unitPriceMinorUnits.value
+          : this.unitPriceMinorUnits,
+      currency: data.currency.present ? data.currency.value : this.currency,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CartLineRow(')
+          ..write('id: $id, ')
+          ..write('restaurantId: $restaurantId, ')
+          ..write('itemId: $itemId, ')
+          ..write('name: $name, ')
+          ..write('unitPriceMinorUnits: $unitPriceMinorUnits, ')
+          ..write('currency: $currency, ')
+          ..write('quantity: $quantity')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    restaurantId,
+    itemId,
+    name,
+    unitPriceMinorUnits,
+    currency,
+    quantity,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CartLineRow &&
+          other.id == this.id &&
+          other.restaurantId == this.restaurantId &&
+          other.itemId == this.itemId &&
+          other.name == this.name &&
+          other.unitPriceMinorUnits == this.unitPriceMinorUnits &&
+          other.currency == this.currency &&
+          other.quantity == this.quantity);
+}
+
+class CartLinesCompanion extends UpdateCompanion<CartLineRow> {
+  final Value<int> id;
+  final Value<String> restaurantId;
+  final Value<String> itemId;
+  final Value<String> name;
+  final Value<int> unitPriceMinorUnits;
+  final Value<String> currency;
+  final Value<int> quantity;
+  const CartLinesCompanion({
+    this.id = const Value.absent(),
+    this.restaurantId = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.unitPriceMinorUnits = const Value.absent(),
+    this.currency = const Value.absent(),
+    this.quantity = const Value.absent(),
+  });
+  CartLinesCompanion.insert({
+    this.id = const Value.absent(),
+    required String restaurantId,
+    required String itemId,
+    required String name,
+    required int unitPriceMinorUnits,
+    required String currency,
+    required int quantity,
+  }) : restaurantId = Value(restaurantId),
+       itemId = Value(itemId),
+       name = Value(name),
+       unitPriceMinorUnits = Value(unitPriceMinorUnits),
+       currency = Value(currency),
+       quantity = Value(quantity);
+  static Insertable<CartLineRow> custom({
+    Expression<int>? id,
+    Expression<String>? restaurantId,
+    Expression<String>? itemId,
+    Expression<String>? name,
+    Expression<int>? unitPriceMinorUnits,
+    Expression<String>? currency,
+    Expression<int>? quantity,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (restaurantId != null) 'restaurant_id': restaurantId,
+      if (itemId != null) 'item_id': itemId,
+      if (name != null) 'name': name,
+      if (unitPriceMinorUnits != null)
+        'unit_price_minor_units': unitPriceMinorUnits,
+      if (currency != null) 'currency': currency,
+      if (quantity != null) 'quantity': quantity,
+    });
+  }
+
+  CartLinesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? restaurantId,
+    Value<String>? itemId,
+    Value<String>? name,
+    Value<int>? unitPriceMinorUnits,
+    Value<String>? currency,
+    Value<int>? quantity,
+  }) {
+    return CartLinesCompanion(
+      id: id ?? this.id,
+      restaurantId: restaurantId ?? this.restaurantId,
+      itemId: itemId ?? this.itemId,
+      name: name ?? this.name,
+      unitPriceMinorUnits: unitPriceMinorUnits ?? this.unitPriceMinorUnits,
+      currency: currency ?? this.currency,
+      quantity: quantity ?? this.quantity,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (restaurantId.present) {
+      map['restaurant_id'] = Variable<String>(restaurantId.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (unitPriceMinorUnits.present) {
+      map['unit_price_minor_units'] = Variable<int>(unitPriceMinorUnits.value);
+    }
+    if (currency.present) {
+      map['currency'] = Variable<String>(currency.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CartLinesCompanion(')
+          ..write('id: $id, ')
+          ..write('restaurantId: $restaurantId, ')
+          ..write('itemId: $itemId, ')
+          ..write('name: $name, ')
+          ..write('unitPriceMinorUnits: $unitPriceMinorUnits, ')
+          ..write('currency: $currency, ')
+          ..write('quantity: $quantity')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$CraveDatabase extends GeneratedDatabase {
   _$CraveDatabase(QueryExecutor e) : super(e);
   $CraveDatabaseManager get managers => $CraveDatabaseManager(this);
@@ -1582,6 +2065,7 @@ abstract class _$CraveDatabase extends GeneratedDatabase {
   late final $MenusTable menus = $MenusTable(this);
   late final $MenuCategoriesTable menuCategories = $MenuCategoriesTable(this);
   late final $MenuItemsTable menuItems = $MenuItemsTable(this);
+  late final $CartLinesTable cartLines = $CartLinesTable(this);
   late final MenuDao menuDao = MenuDao(this as CraveDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -1592,6 +2076,7 @@ abstract class _$CraveDatabase extends GeneratedDatabase {
     menus,
     menuCategories,
     menuItems,
+    cartLines,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -2660,6 +3145,249 @@ typedef $$MenuItemsTableProcessedTableManager =
       MenuItemRow,
       PrefetchHooks Function()
     >;
+typedef $$CartLinesTableCreateCompanionBuilder = CartLinesCompanion Function({
+  Value<int> id,
+  required String restaurantId,
+  required String itemId,
+  required String name,
+  required int unitPriceMinorUnits,
+  required String currency,
+  required int quantity,
+});
+typedef $$CartLinesTableUpdateCompanionBuilder = CartLinesCompanion Function({
+  Value<int> id,
+  Value<String> restaurantId,
+  Value<String> itemId,
+  Value<String> name,
+  Value<int> unitPriceMinorUnits,
+  Value<String> currency,
+  Value<int> quantity,
+});
+
+class $$CartLinesTableFilterComposer
+    extends Composer<_$CraveDatabase, $CartLinesTable> {
+  $$CartLinesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get restaurantId => $composableBuilder(
+    column: $table.restaurantId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get unitPriceMinorUnits => $composableBuilder(
+    column: $table.unitPriceMinorUnits,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CartLinesTableOrderingComposer
+    extends Composer<_$CraveDatabase, $CartLinesTable> {
+  $$CartLinesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get restaurantId => $composableBuilder(
+    column: $table.restaurantId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get unitPriceMinorUnits => $composableBuilder(
+    column: $table.unitPriceMinorUnits,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get currency => $composableBuilder(
+    column: $table.currency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CartLinesTableAnnotationComposer
+    extends Composer<_$CraveDatabase, $CartLinesTable> {
+  $$CartLinesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get restaurantId => $composableBuilder(
+    column: $table.restaurantId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get unitPriceMinorUnits => $composableBuilder(
+    column: $table.unitPriceMinorUnits,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get currency =>
+      $composableBuilder(column: $table.currency, builder: (column) => column);
+
+  GeneratedColumn<int> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+}
+
+class $$CartLinesTableTableManager
+    extends
+        RootTableManager<
+          _$CraveDatabase,
+          $CartLinesTable,
+          CartLineRow,
+          $$CartLinesTableFilterComposer,
+          $$CartLinesTableOrderingComposer,
+          $$CartLinesTableAnnotationComposer,
+          $$CartLinesTableCreateCompanionBuilder,
+          $$CartLinesTableUpdateCompanionBuilder,
+          (
+            CartLineRow,
+            BaseReferences<_$CraveDatabase, $CartLinesTable, CartLineRow>,
+          ),
+          CartLineRow,
+          PrefetchHooks Function()
+        > {
+  $$CartLinesTableTableManager(_$CraveDatabase db, $CartLinesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CartLinesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CartLinesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CartLinesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> restaurantId = const Value.absent(),
+                Value<String> itemId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> unitPriceMinorUnits = const Value.absent(),
+                Value<String> currency = const Value.absent(),
+                Value<int> quantity = const Value.absent(),
+              }) => CartLinesCompanion(
+                id: id,
+                restaurantId: restaurantId,
+                itemId: itemId,
+                name: name,
+                unitPriceMinorUnits: unitPriceMinorUnits,
+                currency: currency,
+                quantity: quantity,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String restaurantId,
+                required String itemId,
+                required String name,
+                required int unitPriceMinorUnits,
+                required String currency,
+                required int quantity,
+              }) => CartLinesCompanion.insert(
+                id: id,
+                restaurantId: restaurantId,
+                itemId: itemId,
+                name: name,
+                unitPriceMinorUnits: unitPriceMinorUnits,
+                currency: currency,
+                quantity: quantity,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CartLinesTable, CartLineRow>(table),
+                  BaseReferences<_$CraveDatabase, $CartLinesTable, CartLineRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CartLinesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$CraveDatabase,
+      $CartLinesTable,
+      CartLineRow,
+      $$CartLinesTableFilterComposer,
+      $$CartLinesTableOrderingComposer,
+      $$CartLinesTableAnnotationComposer,
+      $$CartLinesTableCreateCompanionBuilder,
+      $$CartLinesTableUpdateCompanionBuilder,
+      (
+        CartLineRow,
+        BaseReferences<_$CraveDatabase, $CartLinesTable, CartLineRow>,
+      ),
+      CartLineRow,
+      PrefetchHooks Function()
+    >;
 
 class $CraveDatabaseManager {
   final _$CraveDatabase _db;
@@ -2672,4 +3400,6 @@ class $CraveDatabaseManager {
       $$MenuCategoriesTableTableManager(_db, _db.menuCategories);
   $$MenuItemsTableTableManager get menuItems =>
       $$MenuItemsTableTableManager(_db, _db.menuItems);
+  $$CartLinesTableTableManager get cartLines =>
+      $$CartLinesTableTableManager(_db, _db.cartLines);
 }

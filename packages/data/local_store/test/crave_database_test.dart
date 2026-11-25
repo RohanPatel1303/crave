@@ -68,8 +68,8 @@ void main() {
     await insertItem(restaurantId, 'mains', 'curry');
   }
 
-  test('has schema version 1', () {
-    expect(db.schemaVersion, 1);
+  test('has schema version 2', () {
+    expect(db.schemaVersion, 2);
   });
 
   test('enables foreign keys when opened', () async {
