@@ -39,6 +39,41 @@ class Menus extends Table {
   Set<Column> get primaryKey => {restaurantId};
 }
 
+/// Items currently stored in the user's cart.
+@DataClassName('CartLineRow')
+class CartLines extends Table {
+  /// The local database ID for this cart line.
+  IntColumn get id => integer().autoIncrement()();
+
+  /// The restaurant that offers the cart item.
+  TextColumn get restaurantId => text()();
+
+  /// The server's item ID in the restaurant's menu.
+  TextColumn get itemId => text()();
+
+  /// The display name of the cart item.
+  TextColumn get name => text()();
+
+  /// The item's unit price in the currency's minor units.
+  IntColumn get unitPriceMinorUnits => integer()();
+
+  /// The ISO 4217 currency code for the unit price.
+  TextColumn get currency => text().withLength(min: 3, max: 3)();
+
+  /// The number of units of this item in the cart.
+  IntColumn get quantity => integer()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+    {restaurantId, itemId},
+  ];
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK (quantity >= 1 AND quantity <= 99)',
+  ];
+}
+
 /// Categories of a menu. Category IDs are only unique within a menu.
 @DataClassName('MenuCategoryRow')
 class MenuCategories extends Table {
