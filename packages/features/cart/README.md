@@ -2,7 +2,9 @@
 
 This package owns the customer app's cart. `CartRepository` reads and changes
 the cart that `local_store` keeps on the device, and turns it into `Cart`
-models the UI can render, with prices as `Money`.
+models the UI can render, with prices as `Money`. `CartBloc` holds the cart
+for the screen, `CartPage` and `CartView` show it, and `CartBadge` is the cart
+button other screens put in their app bar.
 
 The cart lives only on the device. This package does not depend on
 `api_client`, so adding, changing and removing items never needs the network.
@@ -16,8 +18,10 @@ workspace.
 This is a layer 2 feature package. It depends on:
 
 - `core` for shared values such as `Result<T>`, `AppFailure`, and `Money`
+- `design_system` for `formatMoney`, spacing tokens, and `AppTheme` in tests
 - `local_store` for the Drift database and `CartDao`
 - `flutter`, which the package's tests and UI need
+- `flutter_bloc` for `CartBloc` and `CartPage`
 - `meta` for annotations such as `@immutable`
 
 As with every feature package, it must not depend on another feature
@@ -79,6 +83,72 @@ transaction, so a screen watching the cart never sees it empty in between.
 `AddToCartOutcome` is a sealed class, so a `switch` over it must handle both
 outcomes.
 
+## Bloc
+
+`CartBloc` takes a `CartRepository` through its constructor and emits a
+`CartState`:
+
+| `loaded` | `cart` | Meaning |
+| --- | --- | --- |
+| `false` | `null` | The database has not emitted yet |
+| `true` | `null` | The cart is empty |
+| `true` | a `Cart` | The cart has lines |
+
+| Event | Effect |
+| --- | --- |
+| `CartStarted` | Starts watching `watchCart()`. A second `CartStarted` keeps the same subscription |
+| `CartQuantityChanged(itemId, quantity)` | Calls `setQuantity`; 0 removes the line |
+| `CartCleared` | Calls `clear` |
+
+The change events only write. The new cart arrives through `watchCart()`, so
+the state always matches what is stored. Closing the bloc cancels the
+subscription.
+
+The bloc does not add items. The app calls `CartRepository.add` itself,
+because `CartHasOtherRestaurant` needs a dialog, and the stream brings the new
+cart to the bloc either way.
+
+## UI
+
+The app provides the bloc and starts it, as it does for `MenuBloc`:
+
+```dart
+BlocProvider(
+  create: (_) => CartBloc(repository: cartRepository)..add(const CartStarted()),
+  child: const CartPage(),
+)
+```
+
+`CartPage` reads the bloc and passes its state and callbacks to `CartView`.
+Widget tests pump `CartView` with hand-built states.
+
+`CartView(state, onQuantityChanged, onClear)` shows:
+
+- a spinner until the cart has loaded, then "Your cart is empty" when there
+  is no cart
+- each line's name, unit price ("$4.50 each"), a stepper (−, the quantity,
+  +), and the line total, with prices from `formatMoney`
+- the total and a "Clear cart" text button at the bottom
+
+− at quantity 1 calls `onQuantityChanged(itemId, 0)`, which removes the line.
+\+ is disabled at 99, the most the cart storage allows. The app bar has no
+`CartBadge`, because this is the cart.
+
+`CartBadge(itemCount, onPressed)` is a cart icon button with a `Badge`
+showing `Cart.itemCount`, hidden at 0. Other screens, such as the menu, put
+it in their app bar; the app passes the count and opens the cart route in
+`onPressed`, so `menu_feature` never depends on this package.
+
+### Semantics
+
+- The stepper buttons read "Remove one Al pastor taco" and "Add one Al pastor
+  taco". The + button reads as disabled at 99.
+- The quantity is its own live region labelled "Quantity 2", so a screen
+  reader announces only the new quantity when it changes.
+- The name and unit price are read together, and so are "Total" and the
+  amount.
+- `CartBadge` reads "Cart, 3 items", or "Cart, 1 item".
+
 ## Storage
 
 The cart is stored in the `CartLines` table through `CartDao`. Features never
@@ -108,6 +178,19 @@ Close the database in `tearDown`. They cover:
 - `startNewCartWith`, which replaces the cart with the new restaurant's item
 - `setQuantity(itemId, 0)`, which removes the line, and removing the last
   line, which emits `null`
+- two concurrent adds from different restaurants on an empty cart, which
+  leave one restaurant, with exactly one `CartHasOtherRestaurant`
+
+Bloc tests use the same real repository and collect `bloc.stream`. They cover
+the state before the database emits, an empty cart, a quantity change, a
+quantity of 0, clearing, a second `CartStarted`, and closing, which cancels
+the subscription.
+
+View and badge tests pump the widgets with hand-built states and check each
+behavior listed under [UI](#ui), including the semantics with
+`find.semantics.byLabel`. The page test drives a real bloc and database
+inside `tester.runAsync`, because Drift does real async work that a widget
+test's fake clock does not advance.
 
 Model tests build every value at runtime, so equality never passes only
 because two constants are the same instance.

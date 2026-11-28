@@ -10,6 +10,7 @@ environment:
 
 dependencies:
   core: ^1.0.0
+  design_system: ^0.1.0
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
