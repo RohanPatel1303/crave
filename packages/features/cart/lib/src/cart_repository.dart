@@ -50,21 +50,20 @@ final class CartRepository {
   ///
   /// If the cart holds items from another restaurant, returns
   /// [CartHasOtherRestaurant] and writes nothing. Call [startNewCartWith] to
-  /// replace that cart instead.
+  /// replace that cart instead. The check and the write happen in one
+  /// transaction, so concurrent adds never leave two restaurants in the cart.
   Future<AddToCartOutcome> add({
     required String restaurantId,
     required String itemId,
     required String name,
     required Money unitPrice,
   }) async {
-    final lines = await _cartDao.watchLines().first;
-    for (final line in lines) {
-      if (line.restaurantId != restaurantId) {
-        return CartHasOtherRestaurant(line.restaurantId);
-      }
-    }
-    await _cartDao.addOne(_newLine(restaurantId, itemId, name, unitPrice));
-    return AddedToCart();
+    final otherRestaurantId = await _cartDao.addOneIfSameRestaurant(
+      _newLine(restaurantId, itemId, name, unitPrice),
+    );
+    return otherRestaurantId == null
+        ? AddedToCart()
+        : CartHasOtherRestaurant(otherRestaurantId);
   }
 
   /// Replaces the whole cart with one unit of an item, in one transaction.

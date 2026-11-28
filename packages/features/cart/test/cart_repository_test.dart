@@ -101,6 +101,26 @@ void main() {
   });
 
   test(
+    'concurrent adds from two restaurants on an empty cart leave one '
+    'restaurant, and exactly one add returns CartHasOtherRestaurant',
+    () async {
+      final outcomes = await Future.wait([
+        _addPastor(repository),
+        _addPastor(repository, restaurantId: 'pho-corner'),
+      ]);
+
+      final lines = await CartDao(db).watchLines().first;
+      final restaurants = lines.map((line) => line.restaurantId).toSet();
+      expect(restaurants, hasLength(1));
+
+      final conflicts = outcomes.whereType<CartHasOtherRestaurant>().toList();
+      expect(conflicts, hasLength(1));
+      expect(conflicts.single.restaurantId, restaurants.single);
+      expect(outcomes.whereType<AddedToCart>(), hasLength(1));
+    },
+  );
+
+  test(
     "startNewCartWith replaces the cart with the new restaurant's item",
     () async {
       await _addPastor(repository);

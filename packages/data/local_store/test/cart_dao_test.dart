@@ -135,6 +135,66 @@ void main() {
     });
   });
 
+  group('addOneIfSameRestaurant', () {
+    test('on an empty cart adds the line and returns null', () async {
+      expect(await dao.addOneIfSameRestaurant(_curry), isNull);
+
+      expect(await dao.watchLines().first, [_stored(_curry, 1)]);
+    });
+
+    test('adds another item from the same restaurant', () async {
+      await dao.addOne(_curry);
+
+      expect(await dao.addOneIfSameRestaurant(_tea), isNull);
+
+      expect(await dao.watchLines().first, [
+        _stored(_curry, 1),
+        _stored(_tea, 1),
+      ]);
+    });
+
+    test('increments an item already in the cart', () async {
+      await dao.addOne(_curry);
+
+      expect(await dao.addOneIfSameRestaurant(_curry), isNull);
+
+      expect(await dao.watchLines().first, [_stored(_curry, 2)]);
+    });
+
+    test('returns the other restaurant and writes nothing', () async {
+      await dao.addOne(_curry);
+
+      expect(await dao.addOneIfSameRestaurant(_margherita), 'r1');
+
+      expect(await dao.watchLines().first, [_stored(_curry, 1)]);
+    });
+
+    test('at quantity 99 throws and keeps it at 99', () async {
+      await dao.addOne(_curry);
+      await dao.setQuantity('r1', 'curry', 99);
+
+      await expectLater(
+        dao.addOneIfSameRestaurant(_curry),
+        throwsA(isA<SqliteException>()),
+      );
+      expect(await dao.watchLines().first, [_stored(_curry, 99)]);
+    });
+
+    test('concurrent calls from two restaurants on an empty cart leave one '
+        'restaurant, and exactly one call returns the other', () async {
+      final results = await Future.wait([
+        dao.addOneIfSameRestaurant(_curry),
+        dao.addOneIfSameRestaurant(_margherita),
+      ]);
+
+      final lines = await dao.watchLines().first;
+      final restaurants = lines.map((line) => line.restaurantId).toSet();
+      expect(restaurants, hasLength(1));
+      expect(results.whereType<String>(), [restaurants.single]);
+      expect(results.where((result) => result == null), hasLength(1));
+    });
+  });
+
   test('inserting a quantity of 0 directly violates the database check', () {
     expect(
       db

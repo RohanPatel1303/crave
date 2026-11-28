@@ -93,6 +93,30 @@ class CartDao extends DatabaseAccessor<CraveDatabase> with _$CartDaoMixin {
     });
   }
 
+  /// Adds one unit of [line] with [addOne], unless the cart holds items from
+  /// another restaurant.
+  ///
+  /// Returns that other restaurant's ID and writes nothing when the cart's
+  /// first line is from a different restaurant; otherwise adds the line and
+  /// returns null. The check and the insert happen in one transaction, so
+  /// concurrent calls can never leave two restaurants in the cart. Like
+  /// [addOne], throws a `SqliteException` if the line already has the
+  /// maximum quantity of 99.
+  Future<String?> addOneIfSameRestaurant(NewCartLine line) {
+    return transaction(() async {
+      final first =
+          await (select(cartLines)
+                ..orderBy([(l) => OrderingTerm.asc(l.id)])
+                ..limit(1))
+              .getSingleOrNull();
+      if (first != null && first.restaurantId != line.restaurantId) {
+        return first.restaurantId;
+      }
+      await addOne(line);
+      return null;
+    });
+  }
+
   Expression<bool> _matches(
     $CartLinesTable l,
     String restaurantId,
